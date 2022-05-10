@@ -1,47 +1,107 @@
+const TABINPUT = '\n\t$c\n'
+const HTMLTAGS = ['p', 'div', 'a', 'section', 'main', 'img', 'svg']
+const CONTINUE = 'CONTINUE'
+const DONE = 'DONE'
+const CORRECT = 'CORRECT'
+const IN_PROGRESS = 'IN_PROGRESS'
+const NEXT = 'NEXT'
+const STOP = 'STOP'
+const z = 'z'
+const SUCCESS = 'SUCCESS'
 
-const globalJavascriptLibraries = [
-    "vue.js",
-    "socket.io.js",
-    "codemirror.js",
-    "katex.min.js",
-    "vuex.min.js",
-    "nerdamer.js",
-    "jquery.min.js",
-    "mathquill.min.js",
+//const LEADER_KEY = '\\'
+const LEADER_KEY = ';'
+const alphabet = [
+    'a',
+    'b',
+    'c',
+    'd',
+    'e',
+    'f',
+    'g',
+    'h',
+    'i',
+    'j',
+    'k',
+    'l',
+    'm',
+    'n',
+    'o',
+    'p',
+    'q',
+    'r',
+    's',
+    't',
+    'u',
+    'v',
+    'w',
+    'x',
+    'y',
+    'z',
 ]
-
-const highFrequencyJavascriptUtilities = [
-    "vue.js",
-
-    "vuex.min.js",
-    "vuestore.js",
-
-    "utils.js",
-    "browser.js",
-    "vue-utils.js",
-    "normalize.css",
+const fakeWindow = {
+    a: {
+        b: {
+            c() {
+                console.log('hi')
+            },
+        }
+    },
+    b() {
+        console.log('b')
+    },
+}
+boop='BOOP'
+a='a'
+b='b'
+alist=['a', 'b', 'c', 'd', 'e']
+const nativeConstructors = [
+    'Array',
+    'Function',
+    'Object',
+    'Promise',
+    'String',
+    'Number',
+    'Null',
+    'Undefined',
+    'RegExp',
 ]
+function isReferenceError(e) {
+    return e.constructor.name == 'ReferenceError'
+}
 
+function isSyntaxError(e) {
+    return e.constructor.name == 'SyntaxError'
+}
 
 original = console.log
 const doglog = dogLogFactory()
+const consoleColors = {
+    Reset : '\x1b[0m',
+    Bright : '\x1b[1m',
+    Green : '\x1b[32m',
+    Blue : '\x1b[34m',
+    Red : '\x1b[31m',
+}
+function Red(x) {
+    return consoleColors.Red + x + consoleColors.Reset
+}
 function pairlog(a, b) {
     //const [name, lineNumber] = getStackInfo()
     //const info = name + ': ' + lineNumber
     const Reset = '\x1b[0m'
     const Bright = '\x1b[1m'
     const Green = '\x1b[32m'
-    const Blue ='\x1b[34m'
+    const Blue = '\x1b[34m'
     const Red = '\x1b[31m'
     original(Bright + Red + a + Reset, b)
 }
 function dogLogFactory() {
-
     const Reset = '\x1b[0m'
     const Bright = '\x1b[1m'
     const Red = '\x1b[31m'
     const Green = '\x1b[32m'
-    const Blue ='\x1b[34m'
+    const Blue = '\x1b[34m'
 
     function info() {
         const [name, lineNumber] = getStackInfo()
@@ -52,7 +112,10 @@ function dogLogFactory() {
 
     return function lambdaDisplay(...args) {
         let message = `   [count ${count++}]`
-        original(Bright + Red + info() + Blue + message + Reset, ...args)
+        original(
+            Bright + Red + info() + Blue + message + Reset,
+            ...args
+        )
     }
 }
 
@@ -98,9 +161,8 @@ function trace(fn) {
     return function lambda(...args) {
         try {
             return fn(...args)
-        }
-        catch(e) {
-            console.log({e, args})
+        } catch (e) {
+            console.log({ e, args })
             throw 'trace error'
         }
     }
@@ -109,7 +171,7 @@ function getFunctionInfo(s) {
     s = s.toString().trim()
     let type = getFirstWord(s)
     let parameters
-    let methods
+    let properties
     let returnValues
 
     let name = getFunctionName(s)
@@ -143,14 +205,14 @@ function getFunctionInfo(s) {
     }
 
     if (type == 'class') {
-        methods = getClassMethods(s)
+        properties = getClassPropertiesFromString(s)
     }
 
     return {
         body: s,
         name,
         type,
-        methods,
+        properties: properties,
         parameters,
         returnValues,
     }
@@ -158,14 +220,13 @@ function getFunctionInfo(s) {
 var dog = display
 
 function display(s, b) {
-
-const Reset = '\x1b[0m'
-const Bright = '\x1b[1m'
-const Red = '\x1b[31m'
-const Green = '\x1b[32m'
-const Yellow= '\x1b[33m'
-const Blue ='\x1b[34m'
-const Magenta = '\x1b[35m'
+    const Reset = '\x1b[0m'
+    const Bright = '\x1b[1m'
+    const Red = '\x1b[31m'
+    const Green = '\x1b[32m'
+    const Yellow = '\x1b[33m'
+    const Blue = '\x1b[34m'
+    const Magenta = '\x1b[35m'
 
     function info() {
         const [name, lineNumber] = getStackInfo()
@@ -174,36 +235,41 @@ const Magenta = '\x1b[35m'
 
     if (b) {
         original(Bright + Red + info(), Blue, s, Reset, b)
-        return 
+        return
     }
     if (isString(s)) {
-        
-    if (test(/^\//, s)) {
-        s = s.slice(1)
-        const name = `[${s}]`
-        original(Bright + Red + info() + Blue + name + Reset + puppetStringify(eval(s)))
-    }
-        else if (hasNewline(s)) {
-        original(Bright + Red + info() + Reset, s, '------------------')
+        if (test(/^\//, s)) {
+            s = s.slice(1)
+            const name = `[${s}]`
+            original(
+                Bright +
+                    Red +
+                    info() +
+                    Blue +
+                    name +
+                    Reset +
+                    puppetStringify(eval(s))
+            )
+        } else if (hasNewline(s)) {
+            original(
+                Bright + Red + info() + Reset,
+                s,
+                '------------------'
+            )
+        } else {
+            original(Bright + Red + info() + Reset, s)
         }
-        else {
-        original(Bright + Red + info() + Reset, s)
-        }
-    }
-    else if (s) {
-        if (isVue(s)) {
-            return JSON.stringify(getClassProperties(s))
-        }
+    } else if (s) {
+        //if (isVue(s)) {
+        //return JSON.stringify(getClassProperties(s))
+        //}
 
-        else if (isClass(s)) {
+        if (isClass(s)) {
             return JSON.stringify(getClassProperties(s))
+        } else {
+            original(Bright + Red + info() + Reset, s)
         }
-        else {
-        original(Bright + Red + info() + Reset, s)
-        }
-    }
-
-    else {
+    } else {
         original(Bright + Red + info() + Reset)
     }
 }
@@ -267,58 +333,409 @@ function isSet(x) {
     return x.constructor.name == 'Set'
 }
 
-function stringify(s) {
-    if (isFunction(s)) {
-        return s.toString()
-    }
-    if (!exists(s)) {
-        return ''
-    }
-    return isPrimitive(s) ? s : JSON.stringify(s, null, 2)
+function stringify(s, birth) {
+    return !exists(s)
+        ? ''
+        : isPrimitive(s)
+        ? s
+        : isFunction(s)
+        ? s.toString()
+        : JSON.stringify(s, birth, 2)
 }
 
-function puppetStringify(x) {
-    if (isFunction(x)) {
-        return `[function]: ${x.name}`
+function functionStringBirth(s) {
+    const watcher = new Watcher()
+    return !exists(s)
+        ? ''
+        : isPrimitive(s)
+        ? s
+        : isFunction(s)
+        ? s.toString()
+        : JSON.stringify(s, replacer, 2)
+
+    function replacer(k, v) {
+        const name = v.constructor.name
+        if (k.startsWith('_')) return //isPrivate//
+        if (name == 'Object' || name == 'Array') {
+            return v
+        }
+
+        if (name == 'Function' || name == 'AsyncFunction') {
+            return v.toString()
+            // a lambda function ... wont remember the state
+        }
+        if (name == 'String' || name == 'Number') {
+            return stringify(v)
+        } else if (v) {
+            return {
+                constructorName: v.constructor.name,
+                constructorValue: mapState(v),
+            }
+        }
     }
-    if (isUndefined(x)) {
-        return `[empty]: undefined`
+}
+
+function isPrivate(s) {
+    return s.startsWith('_')
+}
+
+function consoleVisitor(x) {
+    if (x == null) return
+    return x.name || x.constructor.name
+}
+function stringDictionaryEntry(a, b) {
+    const parse = (x) => {
+        if (isString(x)) {
+            return quotify(x)
+        }
+        return toStringArgument(x)
+    }
+    return `'${a}': ${parse(b)},`
+}
+
+
+
+function notIn(...args) {
+    const ref = flat(args)
+    return (x) => {
+        return !ref.includes(x)
+    }
+}
+
+function lineFilter(s, fn) {
+    return join(s.split('\n').filter(fn))
+}
+
+
+function info(state, ...keys) {
+    const value = reduce(keys, (key) => state[key])
+    console.log(value)
+    return value
+}
+
+function editObject(obj, key, fn) {
+    obj[key] = fn(obj[key])
+    return obj
+}
+
+function isCssWord(s) {
+    return /^[\w-]+$/.test(s)
+}
+
+
+function isMp3(x) {
+    const e = ['m4a', 'wav', 'mp3']
+    return e.includes(getExtension(x))
+}
+
+
+
+function getProseWords(s) {
+    return s.match(/\b\w[\w\'-]*\w\b/g)
+}
+
+function puppetVisitor(x, parent) {
+    return 
+    if (x == null) return `[Primitive]: null`
+    const name = x.constructor.name
+    const known = {
+        TreeCursor: lookNode,
+        BufferNode: lookNode,
+        'BufferNode$1': lookNode,
+        Tree: lookNode,
+        TreeNode: lookNode,
     }
 
-    if (isNull(x)) {
-        return `[empty]: null`
-    }
-    if (x == '') {
-        return `[empty]: ''`
-    }
-    if (isString(x)) {
-        return '[String]: ' + x
+
+    if (name.endsWith('Error')) {
+        console.log()
+        return x.stack
     }
 
-    if (isBoolean(x)) {
-        return '[boolean]: ' + x
+    if (name == 'Object' || name == 'Array') {
+        return x
     }
 
-    if (isNumber(x)) {
-        return '[Number]: ' + x
-    }
-    if (isError(x)) {
-        return JSON.stringify(getVueErrorInfo(x))
+    if (name == 'Function' || name == 'AsyncFunction') {
+        return x.name
+        return `[Primitive]: ${x.name}`
     }
 
-    if (isClass(x)) {
-        return JSON.stringify(getClassProperties(x))
+    if (name == 'Boolean') {
+        return x
+        return `[Primitive]: ${x}`
     }
 
-    if (isArray(x)) {
-        return JSON.stringify(x)
+    if (name == 'Number') {
+        return x
+        return `[Primitive]: ${x}`
     }
-    if (isObject(x)) {
-        return JSON.stringify(x)
+
+    if (name == 'String') {
+        return x
+        return `[Primitive]: [${x || 'empty-string'}]`
     }
-    return x.toString()
+
+    if (name in known) {
+        const value =  known[name](x)
+        return value
+    }
+    return `[Name]: ${name || 'undefined'}`
+}
+
+function lookDiv(x) {
+    return {
+        name: x.className || x.tagName,
+        text: x.textContent,
+        pos: getBoundingClientRect(x),
+        color: x.style.background,
+    }
+}
+
+function legoConsole(x) {
+    const value = JSON.stringify(_legoConsole(x), null, 2)
+    console.log(value)
+    return value 
+}
+function _legoConsole(x) {
+    if (x == null) return `[Primitive]: null`
+    const name = x.constructor.name
+    const known = {
+        TreeCursor: lookNode,
+        BufferNode: lookNode,
+        'BufferNode$1': lookNode,
+        Tree: lookNode,
+        TreeNode: lookNode,
+        HTMLDivElement: lookDiv,
+    }
+
+    if (name.endsWith('Error')) {
+        return x.stack
+    }
+
+    if (name == 'Object' || name == 'Array') {
+        return x
+    }
+
+    if (name == 'Function' || name == 'AsyncFunction') {
+        return x.name
+        return `[Primitive]: ${x.name}`
+    }
+
+    if (name == 'Boolean') {
+        return x
+        return `[Primitive]: ${x}`
+    }
+
+    if (name == 'Number') {
+        return x
+        return `[Primitive]: ${x}`
+    }
+
+    if (name == 'String') {
+        return x
+        return `[Primitive]: [${x || 'empty-string'}]`
+    }
+
+    if (name in known) {
+        return known[name](x)
+    }
+    return `[Name]: ${name || 'undefined'}`
+}
 
 
+
+
+function forIterationArg(s) {
+    if (s.endsWith('s')) {
+        return s.slice(0, -1)
+    }
+    const dict = {
+        'children': 'child',
+    }
+
+    let match = search(/children$/i, s) || ''
+    return dict[match.toLowerCase()] || 'item'
+}
+const knownAttrs = {
+    submit: ['@submit', 'onSubmit'],
+    click: ['@click', 'onClick'],
+    x: ['@x', 'onX'],
+    x: ['@x', 'onX'],
+    x: ['@x', 'onX'],
+    x: ['@x', 'onX'],
+    submit: ['@submit', 'onSubmit'],
+}
+function vueHelper(key, value) {
+    if (value == null && key in knownAttrs) {
+        return knownAttrs[key]
+    }
+    let vKey = vmap[key]
+    if (key == 'for') {
+        value = `${forIterationArg(value)} in ${value}`
+    }
+
+    else if (key == 'click') {
+        value = 'on' + capitalize(value)
+    }
+    else if (key == 'if' || key == 'show') {
+                if (!test(/^show|^display/, value)) {
+                    value = toCamelCase('show-' + value)
+                }
+    }
+
+    return [vKey, value]
+}
+
+function singleWordParser(s) {
+    
+        if (s.includes('=')) {
+            let [a, b] = split(s, '=')
+            let div = 'div'
+            if (a == 'for') {
+                let arg = depluralize(b)
+                let stuff = `(${arg}, index) in ${b}`
+                className = toDashCase(arg) + '-item'
+                return toOpeningTag('div', {
+                    class: className,
+                    'v-for': stuff,
+                })
+            }
+        }
+        if (s == 'div' || s == 'container') {
+            let containerClass = 'container-' + 100
+            return toOpeningTag(div, {
+                class: containerClass,
+            })
+        }
+
+        if (s == 'transition') {
+            return toOpeningTag(s, {
+                mode: 'out-in',
+                name: 'fade',
+            })
+        }
+
+        if (s == 'component') {
+            return divify(s, {
+                ':is': 'currentComponent',
+            })
+        }
+        if (test(/^item\.\w+$/, s)) {
+            let className = state.forArg
+                ? state.forArg + '-' + toDashCase(s)
+                : toDashCase(s)
+
+            return divify('div', { class: className }, vueText(s))
+        }
+
+        return divify('div', { class: toDashCase(s) }, vueText(s))
+        return toOpeningTag(div, { class: s })
+}
+
+function announceError(e) {
+    console.log(['ERROR', getCaller(), e.toString()])
+}
+
+
+function repf(a, b, flags = 'g') {
+    return function replacerLambda(s) {
+        return replace(a, b, s, flags)
+    }
+}
+
+function hasOverlap(a, b) {
+    return a.some((x) => b.includes(x))
+}
+
+
+
+function typeOf(x) {
+    if (x == null) return 'null'
+    const name = x.constructor.name
+    switch (name) {
+        case 'String': 
+            return name + '-variable'
+        default:
+            return name
+    }
+}
+
+
+function jshint(source) {
+    const JSHINT = require('../jshint.js')
+
+    const predef = {
+        Vue: true,
+        prettier: true,
+        clearTimeout: true,
+        setTimeout: true,
+        console: true,
+    }
+
+    const options = {
+        asi: true,
+        debug: true,
+        evil: true,
+        eqnull: true,
+        esversion: 8,
+        expr: true,
+        funcscope: true,
+    }
+
+    JSHINT.jshint(source.toString(), options, predef)
+    return JSHINT.data()
+}
+
+function puppetVisitorDeep(x) {
+    return runner(x)
+    function runner(x) {
+    if (x == null) return `[Primitive]: null`
+    if (isPrimitive(x)) {
+         return x
+    }
+
+    if (isSet(x)) {
+        return Array.from(x)
+    }
+
+    const name = x.constructor.name
+    if (name == 'Object' || name == 'Array') {
+        return x
+    }
+
+    if (name == 'Function' || name == 'AsyncFunction') {
+        return `[Primitive]: ${x.name}`
+    }
+    return reduceObject(x, (k, v) => {
+        return [k, runner(v)]
+    })
+    }
+}
+
+function shortValue(s) {
+    if (s.includes('\n')) {
+        return (
+            s.match(/.+/)[0] +
+            ' ... ' +
+            opposite(search(/[\[\{]/, s))
+        )
+    }
+    return s
+}
+
+function lookNode(x, s) {
+    if (!s) return x.name
+    if (!x) return
+    const value = shortValue(s.slice(x.from, x.to))
+    const o = {
+        name: x.name,
+        from: x.from,
+        to: x.to,
+        value: value,
+        //long: s.slice(x.from, x.to)
+    }
+    return o
 }
 
 function datestamp(date) {
@@ -332,17 +749,21 @@ function datestamp(date) {
     )
 }
 
+
 function getHMSM(date) {
     if (!date) date = new Date()
     else if (isString(date)) {
         date = new Date(date)
     }
     const hours = date.getHours()
-    const minutes = date.getMinutes() 
+    const minutes = date.getMinutes()
     const seconds = date.getSeconds()
     const ms = date.getMilliseconds()
-    return [hours, minutes, seconds, ms]
+    const ampm = hours >= 12 ? 'PM' : 'AM'
+    return [hours, minutes, seconds, ms, ampm]
 }
+
+
 
 function getMDY(date) {
     if (!date) date = new Date()
@@ -359,32 +780,349 @@ function isString(s) {
     return typeof s === 'string'
 }
 
+function conditional(fn, condition) {
+    return function lambda(x) {
+        if (condition(x)) return fn(x)
+        return x
+    }
+}
+
 function isArray(a) {
     return Array.isArray(a)
 }
 
-function reduce(items, fn = (k, v) => [k, v]) {
-    if (!exists(items)) return {}
-    items = prepareIterable(items, 'entries')
+function isObject(x) {
+    return (
+        Object.prototype.toString.call(x) == '[object Object]'
+    )
+}
+function getConstructorName(x) {
+    return x && x.constructor && x.constructor.name
+}
+function isObjectLiteral(x) {
+    return getConstructorName(x) == 'Object'
+}
 
-    const store = {}
-    const doublet = isDoubleIterable(items)
+function seeInfo(x) {
+    //
+    //waiting on me...
+    //v=new x((vv) => vv()).then((y) => console.log(y))
+    //console.log(v)
+    //console.log(Object.keys(v))
+    //console.log(v)
+    //Object.getOwnPropertyNames(new x(identity))
+    //console.log(Object.getOwnPropertyNames(new x(identity)))
+    //Object.getOwnPropertyNames(x)
+    //Object.getOwnPropertyNames
+    //console.log(Object.getPrototypeOf({}).hasOwnProperty('__defineGetter__'))
+    //return Object.getPrototypeOf(x).hasOwnProperty('__defineGetter__')
+}
 
-    for (let i = 0; i < items.length; i++) {
-        const item = items[i]
+function mapState(state) {
+    const name = state.constructor.name
+    const ref = {
+        Set: Array.from,
+        RegExp: String,
+        Watcher: 'seen',
+        //'Storage': 'store',
+    }
+    if (ref.hasOwnProperty(name)) {
+        const key = ref[name]
+        return isFunction(key) ? key(state) : state[key]
+    }
+}
 
-        const value = doublet ? fn(...item, i) : fn(item, i)
-        if (!exists(value)) continue
+function reduceIterableHelper(acc, value, k) {
         if (isArray(value) && value.length == 2) {
-            store[value[0]] = value[1]
-        } else {
-            if (doublet) store[item[0]] = value
-            else {
-                store[item] = value
+            acc[value[0]] = value[1]
+        } else if (!isNull(value)) {
+            acc[k] = value
+        }
+        return acc
+}
+function reduceObject(o, fn = (k, v) => [k, v]) {
+    return Object.entries(o || {}).reduce((acc, item, i) => {
+        const value = fn(...item, i)
+        return reduceIterableHelper(acc, value, item[0])
+    }, {})
+}
+function reduceArray(a, fn) {
+    if (isNestedArray(a)) {
+        return a.reduce((acc, item, i) => {
+            const value = fn(...item, i)
+            return reduceIterableHelper(acc, value, item[0])
+        }, {})
+    }
+    else {
+        return a.reduce((acc, item, i) => {
+            const value = fn(item, i)
+            return reduceIterableHelper(acc, value, item)
+        }, {})
+    }
+}
+function reduce(items, fn) {
+    if (!exists(items)) return {}
+    const objectReducer = (k, v) => [k, v]
+
+    if (isObject(items)) {
+        return reduceObject(items, fn || objectReducer)
+    }
+
+    return reduceArray(items, fn || objectReducer)
+}
+
+function uncomment(s) {
+    return s.replace(/^\/\/ */, a)
+}
+
+function escapeNewlinesAndQuotes(s) {
+    return s.replace(/[\n\'\"]/g, (x) => {
+        switch (x) {
+            case '\n':
+                return '\\n'
+            case "'":
+                return "\\'"
+            case '"':
+                return '\\"'
+        }
+    })
+}
+
+function yes() {
+    return true
+}
+
+function longShort(a, b) {
+    if (isNumber(a)) {
+        return a >= b ? [a, b] : [b, a]
+    }
+    return len(a) >= len(b) ? [a, b] : [b, a]
+}
+
+function shortLong(a, b) {
+    if (isNumber(a)) {
+        //console.log(a <= b, 'hi')
+        //console.log(); throw ''
+        return a <= b ? [a, b] : [b, a]
+    }
+    return len(a) <= len(b) ? [a, b] : [b, a]
+}
+
+function getLines(s, a, b) {
+    let regex = ''
+    let marker = '\\n.*'
+    if (b) {
+        if (a) {
+            regex += '^.*\n'
+            regex += marker.repeat(a - 1)
+        }
+        regex += '('
+        regex += `(?:.*\\n){0,${b - 1}}.*`
+        regex += ')'
+    } else {
+        regex += '('
+        regex += '^.*'
+        regex += `(?:\\n.*){0,${a - 1}}`
+        regex += ')'
+    }
+    //console.log(regex)
+    return search(regex, s)
+}
+function isSimilar(a, b) {
+    //function runner(s) {
+    //const words = getWords(getLines(s.trimStart(), 3), {mode:'code'})
+    //return words
+    //}
+
+    function runner(s) {
+        return s.trimStart().slice(0, 10).trim()
+    }
+
+    function runner(s) {
+        return getLines(s.trimStart(), 0, 1).trim()
+    }
+
+    if (type(a) !== type(b)) return false
+    if (!a || !b) return false
+    if (isString(a)) {
+        return runner(a) == runner(b)
+        return (
+            unique(...longShort(runner(a), runner(b))).length <
+            3
+        )
+    }
+    return true
+}
+function push(items, x, unique) {
+    if (!x) return items
+    if (isSet(x)) {
+        x = Array.from(x)
+    }
+    if (unique) {
+        if (isArray(x)) {
+            for (let item of x) {
+                if (!items.includes(item)) items.push(item)
             }
+        } else if (!items.includes(x)) {
+            items.push(x)
+        }
+    } else {
+        isArray(x) ? items.push(...x) : items.push(x)
+    }
+    return items
+}
+function mergeState(state, key, value) {
+    state[key] = merge(state[key], value)
+    return state
+}
+
+function mergeProperty(state, key, value) {
+    state[key] = merge(state[key], value)
+    return state
+}
+function iterTest(s, items) {
+    for (let i = 0; i < items.length - 1; i += 2) {
+        if (test(items[i], s)) {
+            return items[i + 1]
         }
     }
+    return getLast(items)
+}
+
+function hasPeriod(s) {
+    return s.includes('.')
+}
+
+function getFunction(key, s) {
+    const functionRE = `^(?:(?:async )?function|const|var|class) ${key}[^]+?\\n}`
+    return search(regex, s)
+}
+
+function argumentGetter(args) {
+    if (args.length == 1) {
+        return
+    }
+    return Array.from(args)
+}
+function argumentFiller(args, ...fillers) {
+    if (args.length == 1) {
+        return [fillers[0], args[0]]
+    }
+    return args
+}
+
+function toMilliseconds(s) {
+    s = Number(s) || 0
+    if (s >= 50) {
+        return s
+    }
+    return s * 1000
+}
+
+function isAsync(x) {
+    return x.constructor.name == 'AsyncFunction'
+}
+
+function partition(items, n) {
+    if (isFunction(n)) {
+        return partitionWithFunctions(...Array.from(arguments))
+    }
+    const store = []
+    for (let i = 0; i < items.length; i++) {
+        if (i % n == 0) {
+            store.push([])
+        }
+        getLast(store).push(items[i])
+    }
     return store
+}
+
+function getInterestingBindings(s) {
+    const regex = /[a-zA-Z][\w.]{2,}(?=[\(\[\]])/g
+    return Array.from(s.match(regex) || [])
+}
+
+function hasBracket(s) {
+    return test(/{/, s)
+}
+
+function throwError(...args) {
+    console.log(args)
+    throw ''
+}
+
+function coinflip(n = 0.1) {
+    return Math.random() > 1 - n
+}
+
+function isUtf(s) {
+    const utfe = [
+        'txt',
+        'lang',
+        'drafts',
+        'js',
+        'py',
+        'vim',
+        'json',
+        'css',
+        'html',
+    ]
+    return utfe.includes(getExtension(s))
+}
+
+function opposite(s) {
+    const dict = {
+        '{': '}',
+        'visible': 'hidden',
+        'hidden': 'visible',
+        '[': ']',
+        '(': ')',
+        true: false,
+        false: true,
+        '^': '$',
+        '}': '{',
+        ']': '[',
+        ')': '(',
+        1: 0,
+        0: 1,
+    }
+    return dict[s]
+}
+
+class CumulativeStorage {
+    constructor(store) {
+        this.store = store || {}
+    }
+    get value() {
+        return this.store
+    }
+    add(...args) {
+        addProperty(this.store, ...args)
+    }
+}
+
+function addProperty(o, ...args) {
+    if (args.length == 2) {
+        return addPropertyLambda2(o, ...args)
+    }
+
+    if (args.length == 3) {
+        if (args[2] == Array) {
+            return addPropertyLambdaArray(o, ...args)
+        }
+        return addPropertyLambda3(o, ...args)
+    }
+
+    function addPropertyLambdaArray(o, key, value) {
+        if (!o.hasOwnProperty(key)) {
+            o[key] = []
+        }
+        isArray(value)
+            ? o[key].push(...value)
+            : o[key].push(value)
+
+        return o
+    }
 }
 
 function exists(input) {
@@ -395,7 +1133,36 @@ function exists(input) {
     return true
 }
 
+function addPropertyLambda2(o, key, value) {
+    if (o[key]) {
+        if (isObject(value)) {
+            Object.assign(o[key], value)
+        } else if (isArray(value)) {
+            o[key] = [...o[key], ...value]
+        }
+        return o
+    }
 
+    o[key] = value
+    return o
+}
+
+function addPropertyLambda3(o, parentKey, key, value) {
+    if (!o.hasOwnProperty(parentKey)) {
+        o[parentKey] = {}
+    }
+    o[parentKey][key] = value
+    return o
+}
+
+function iterRange(...args) {
+    const store = []
+    args = gatherArgs(args)
+    for (let i = args[0]; i <= args[1]; i++) {
+        store.push(i)
+    }
+    return store
+}
 
 function isPureObject(x) {
     return x && x.constructor.name == 'Object'
@@ -403,35 +1170,42 @@ function isPureObject(x) {
 
 function isThisFunction(s) {
     s = s.toString()
-    return s.startsWith('function') && test(/\bthis\b/, s)
+    return test(/\bthis\b/, s)
 }
 
-function rainbow(n) {
-    switch (n) {
-        default:
-            return rainbowStop(Math.random())
-    }
+function rainbow(a, b = 10, stops = 20) {
+    return rainbowStops(a, b, stops)
 
     function rainbowStop(h) {
-      let f = (n, k = (n + h * 12) % 12) => {
-          return 0.5 - 0.5 * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-      }
-      let rgb2hex = (r, g, b) =>
-        "#" +
-        [r, g, b]
-          .map(x =>
-            Math.round(x * 255)
-              .toString(16)
-              .padStart(2, 0)
-          )
-          .join("");
-      return rgb2hex(f(0), f(8), f(4));
+        let f = (n, k = (n + h * 12) % 12) => {
+            return (
+                0.5 -
+                0.5 * Math.max(Math.min(k - 3, 9 - k, 1), -1)
+            )
+        }
+        let rgb2hex = (r, g, b) =>
+            '#' +
+            [r, g, b]
+                .map((x) =>
+                    Math.round(x * 255)
+                        .toString(16)
+                        .padStart(2, 0)
+                )
+                .join('')
+        return rgb2hex(f(0), f(8), f(4))
     }
 
-    function rainbowStops(stops) {
-       return range(stops).map((item, i) => {
-            return rainbowStop(item / stops, 1, 0.5)
-        })
+    function rainbowStops(a, length, stops) {
+        let store = []
+        let base = a
+        for (let i = 0; i < length; i++) {
+            let start = base + i
+            let increment = start / stops
+            console.log(increment)
+            const value = rainbowStop(increment / length, 1, 0.5)
+            store.push(value)
+        }
+        return store
     }
 }
 
@@ -440,17 +1214,24 @@ function average(a, b) {
 }
 // u need a grammar & u need visitors
 
-
-
 class Indexed extends StandardObject {
-    constructor(store = {}, modulus = false) {
+    constructor(store = {}) {
         super(store)
-        this.tracker = exists(store) ? 
-            reduce(store, (k, v) => [k, {index: 0, done: false}]) : {}
-        this.key = this.keys[0]
-        this.modulus = modulus
-    }
 
+        this.tracker = exists(store)
+            ? reduce(store, (k, v) => [
+                  k,
+                  { index: 0, done: !exists(v) },
+              ])
+            : {}
+
+        this.key = this.keys[0]
+        this.config = {
+            autoIncrement: true,
+            autoIncrement: false,
+            modulus: false,
+        }
+    }
 
     get(index) {
         return this.store[this.key][index]
@@ -460,11 +1241,20 @@ class Indexed extends StandardObject {
         return this.tracker[this.key].index
     }
 
-    set index(val) {
+    set index(n) {
+        if (this.isDone()) {
+            if (this.config.autoIncrement) {
+                this._incrementKey(this.key)
+            }
+            return 
+        }
+        this.tracker[this.key].index = n
+    }
+
+    set indexOld(val) {
         if (this.get(val)) {
             this.tracker[this.key].index = val
-        }
-        else {
+        } else {
             this.tracker[this.key].done = true
             const done = this._incrementKey(this.key)
             if (done) {
@@ -483,11 +1273,11 @@ class Indexed extends StandardObject {
     _incrementKey(key) {
         let count = 0
         while (count++ < this.keys.length) {
-             key = modularIncrement(this.keys, key)
-             if (this.tracker[key].done === false) {
-                 this.key = key
-                 return false
-             }
+            key = modularIncrement(this.keys, key)
+            if (this.tracker[key].done === false) {
+                this.key = key
+                return false
+            }
         }
         return true
     }
@@ -496,7 +1286,7 @@ class Indexed extends StandardObject {
         this.key = key
     }
 
-    isDone(key) {
+    isDone() {
         const done = this.index == this.length
         if (done) {
             this.tracker[this.key].done = true
@@ -510,25 +1300,32 @@ function isObject(x) {
 }
 
 function type(x) {
-    return search(/object (\w+)/, Object.prototype.toString.call(x))
+    return search(
+        /object (\w+)/,
+        Object.prototype.toString.call(x)
+    )
 }
 
 function breaker(limit = 5) {
     if (typeof __once__ == 'undefined') {
-            __once__ = 0
+        __once__ = 0
     }
     if (++__once__ == limit) {
-        console.log(); throw 'limit reached'
+        console.log()
+        throw 'limit reached'
     }
 }
 
-
 function isNumber(s) {
-    return typeof s == 'number' || test('^-?\\d+(?:\\.\\d+)?$', s)
+    return (
+        typeof s == 'number' || test('^-?\\d+(?:\\.\\d+)?$', s)
+    )
 }
 
 function test(regex, s, flags = '') {
-    return (isString(regex) ? RegExp(regex, flags) : regex).test(s)
+    return (
+        isString(regex) ? RegExp(regex, flags) : regex
+    ).test(s)
 }
 
 function range(...args) {
@@ -540,10 +1337,9 @@ function range(...args) {
     }
     if (args.length == 1) {
         if (isStringNumberRange(args[0])) {
-            ;[a,b] = split(args[0], '-').map(Number)
+            ;[a, b] = split(args[0], '-').map(Number)
             console.log(a, b)
-        }
-        else {
+        } else {
             b = args[0]
             a = 1
         }
@@ -560,7 +1356,8 @@ function range(...args) {
     for (let i = a; i <= b; i++) {
         if (c) {
             if (c.toString() == [].toString()) store.push([])
-            else if (c.toString() == {}.toString()) store.push({})
+            else if (c.toString() == {}.toString())
+                store.push({})
         } else {
             store.push(i)
         }
@@ -577,10 +1374,8 @@ function isPrimitive(value) {
     )
 }
 
-
-
 function textTable(items) {
-    const matrix = new Matrix(items, {width: 4})
+    const matrix = new Matrix(items, { width: 4 })
     let t = ''
     matrix.iterate((value, k, v, i, linebreak) => {
         t += i + '. ' + value + '   '
@@ -592,7 +1387,6 @@ function textTable(items) {
 function isDoubleIterable(items) {
     return isObject(items) || isNestedArray(items)
 }
-
 
 function isQuote(s) {
     return test(/^['"]/, s)
@@ -619,7 +1413,7 @@ function coerceToNullIf(condition, value) {
     return value
 }
 function tally(arr, mode = Object) {
-    const storage = new Storage({_mode: Number})
+    const storage = new Storage({ _mode: Number })
     for (let item of arr) {
         storage.add(item)
     }
@@ -627,8 +1421,8 @@ function tally(arr, mode = Object) {
 }
 
 function spellcheckFactory(dict) {
-        let regex = `\\b(?:${Object.keys(dict).join('|')})\\b`
-        regex = RegExp(regex, 'g')
+    let regex = `\\b(?:${Object.keys(dict).join('|')})\\b`
+    regex = RegExp(regex, 'g')
     return function spellcheck(s) {
         return simpleSpellcheck(s, dict, regex)
     }
@@ -644,22 +1438,33 @@ class Spellcheck {
     }
 }
 function simpleSpellcheck(s, dict, dictRegex) {
-        const regex = /[.\'\"]/
-    if (!dictRegex) dictRegex = RegExp(`\\b(?:${Object.keys(dict).join('|')})(?![.\'\"\\w])`, 'g')
-        return s.replace(dictRegex, (x, offset, original) => {
-            if (regex.test(original.charAt(offset - 1))) return x
-            return dict[x] || x
-        })
+    const regex = /[.\'\"]/
+    if (!dictRegex)
+        dictRegex = RegExp(
+            `\\b(?:${Object.keys(dict).join(
+                '|'
+            )})(?![.\'\"\\w])`,
+            'g'
+        )
+    return s.replace(dictRegex, (x, offset, original) => {
+        if (regex.test(original.charAt(offset - 1))) return x
+        return dict[x] || x
+    })
 }
 
-function typist(s, mode) {
+function typist(s, mode = 'simple') {
     function typist2(s) {
+        const dict = {
+            'E': 'Enter',
+            'spc': ' ',
+        }
         return split(s).map((item, i) => {
-            let [a,b] = split(item, '')
+            return dict[item] || item
+            let [a, b] = split(item, '')
             if (b) {
-                return {key: b, ctrlKey: a}
+                return { key: b, ctrlKey: a }
             }
-            return {key: a}
+            return { key: a }
         })
     }
     if (mode == 'simple') return typist2(s)
@@ -683,30 +1488,30 @@ function typist(s, mode) {
     }
 
     function reducer(acc, item, key) {
-                if (!test(/^</, key)) {
-                    acc.key = key
-                    return acc
-                }
-                if (item == 'c') acc['ctrlKey'] = true
-                else if (item == 'a') acc['altKey'] = true
-                else acc.key = dict[item] || item
-                return acc
+        if (!test(/^</, key)) {
+            acc.key = key
+            return acc
+        }
+        if (item == 'c') acc['ctrlKey'] = true
+        else if (item == 'a') acc['altKey'] = true
+        else acc.key = dict[item] || item
+        return acc
     }
     function reducern(acc, item, key) {
-                acc.isFakeKeyboardEvent = true
-                if (!test(/^</, key)) {
-                    acc.key = key
-                    return acc
-                }
-                acc.preventDefault = identity
-                if (isNumber(item)) {
-                    acc.sleep = Number(item)
-                    return acc
-                }
-                if (item == 'c') acc['ctrlKey'] = true
-                else if (item == 'a') acc['altKey'] = true
-                else acc.key = dict[item] || item
-                return acc
+        acc.isFakeKeyboardEvent = true
+        if (!test(/^</, key)) {
+            acc.key = key
+            return acc
+        }
+        acc.preventDefault = identity
+        if (isNumber(item)) {
+            acc.sleep = Number(item)
+            return acc
+        }
+        if (item == 'c') acc['ctrlKey'] = true
+        else if (item == 'a') acc['altKey'] = true
+        else acc.key = dict[item] || item
+        return acc
     }
     function transformer(key) {
         return key
@@ -732,12 +1537,9 @@ function isNestedArray(x) {
     return isArray(x) && isArray(x[0])
 }
 
-
-
 function removeEs6(s) {
     return s.replace(/^import.+\n*|^export /gm, '')
 }
-
 
 function isLink(s) {
     return getExtension(s) == 'css'
@@ -749,7 +1551,10 @@ function regexElongation(s) {
 
 function getFunctionName(s) {
     if (isFunction(s)) return s.name
-    return search(/^(?:def|class|const|var|(?:async )?function) (\w+)/, s)
+    return search(
+        /^(?:def|class|const|var|(?:async )?function) (\w+)/,
+        s
+    )
 }
 
 function isFunction(x) {
@@ -760,10 +1565,11 @@ function isPlural(s) {
     return test(/s$/, s)
 }
 
-function toSpaces(n = 4) {
+function toSpaces(n = 4, tabs = 0) {
     if (!n) {
         return ''
     }
+    if (tabs) return isNumber(n) ? '\t'.repeat(n/4) : '\t'.repeat(n.length/4)
     return isNumber(n) ? ' '.repeat(n) : n
 }
 
@@ -771,24 +1577,31 @@ function replace(regex, replacement, s, flags = 'gm') {
     return s.replace(prepareRegex(regex, flags), replacement)
 }
 
-
-
 class Watcher {
     constructor(fn) {
         this.fn = fn || identity
         this.seen = new Set()
+        this.count = 0
+    }
+    filter(items) {
+        return items.filter((item, i) => {
+            return this.isFresh(item)
+        })
     }
     isFresh(key) {
         let value = this.fn(key)
-        if (this.seen.has(value)) return false
+        if (this.seen.has(value)) {
+            this.count += 1
+            return false
+        }
         this.seen.add(value)
+        this.count = 0
         return true
     }
     has(key) {
         return this.seen.has(key)
     }
 }
-
 
 function isHtmlFile(s) {
     return /\.html$/.test(s)
@@ -804,13 +1617,13 @@ function isJavascriptFile(s) {
 
 function getQuotes(s) {
     return findallStrings(s)
-    // 
+    //
 }
 
 function findKeyFactory(mode, index = 0) {
     const method = mode == 'single' ? 'find' : 'filter'
     return function findKeyRunner(x, kt, vt) {
-        const value =  Object.entries(x)[method]((x) => {
+        const value = Object.entries(x)[method]((x) => {
             if (kt) return kt(x[0])
             if (vt) return vt(x[1])
         })
@@ -829,22 +1642,47 @@ const findKey = findKeyFactory('single')
 const findKeys = findKeyFactory('multiple')
 
 function getShortestLongest(mode) {
-    const compare = mode == 'longest' ? (a,b) => a > b : (a,b) => a < b
+    const compare =
+        mode == 'longest' ? (a, b) => a > b : (a, b) => a < b
     const mathFn = mode == 'longest' ? Math.max : Math.min
     const defaultMode = null
     //const defaultMode = mode == 'longest' ? Number : null
 
-    return function getter(arr, measure = len, mode = defaultMode) {
+    return function getter(
+        arr,
+        measure = len,
+        mode = defaultMode
+    ) {
+        let asObject
+        let keys
+        if (isObject(arr)) {
+            keys = Object.keys(arr)
+            arr = Object.values(arr)
+            asObject = true
+        }
+
+        //console.log(mode)
         const value = arr.reduce(
             (acc, item, i) => {
                 if (!item) return acc
                 const itemLength = measure(item, i)
-                if (mode == Number) return mathFn(itemLength, acc)
-                const accLength = isNumber(acc) ? acc : measure(acc, i)
-                return compare(accLength, itemLength) ? acc : item
+                //console.log(itemLength)
+                if (mode == Number)
+                    return mathFn(itemLength, acc)
+                const accLength = isNumber(acc)
+                    ? acc
+                    : measure(acc, i)
+                return compare(accLength, itemLength)
+                    ? acc
+                    : item
             },
             mode == Number ? 0 : arr[0]
         )
+        if (asObject) {
+            let index = arr.indexOf(value)
+            console.log(index)
+            return keys[index]
+        }
         return value
     }
 }
@@ -855,10 +1693,12 @@ const getLongest = getShortestLongest('longest')
 function findCaller(target, offset = 0) {
     const stack = getStackTrace()
     console.log(stack, target)
-    console.log(); throw ''
-    const index = stack.findIndex((x) => test(target, x[0])) + offset
+    console.log()
+    throw ''
+    const index =
+        stack.findIndex((x) => test(target, x[0])) + offset
     const [name, line] = index
-    return {name, line}
+    return { name, line }
 }
 
 function hasSymbol(s) {
@@ -874,9 +1714,15 @@ function looksLikeRegex(s) {
 }
 
 function prepareRegex(regex, flags) {
+    //rn bringRegexToLife
+    let newFlags
     if (isString(regex)) {
         if (looksLikeRegex(regex)) {
-            ;[regex, flags] = search(/^\/(.*?)\/(\w*)$/, regex)
+            ;[regex, newFlags] = search(
+                /^\/(.*?)\/(\w*)$/,
+                regex
+            )
+            if (newFlags) flags = newFlags
         }
         regex = RegExp(regex, flags || '')
     }
@@ -912,7 +1758,9 @@ function boundary(s) {
 }
 
 function getVueErrorInfo(e) {
-    return e.stack.replace(/file.*?(?=\w+\.js)|at invo[^]+/g, '').trim()
+    return e.stack
+        .replace(/file.*?(?=\w+\.js)|at invo[^]+/g, '')
+        .trim()
     let s = e.stack.replace(/vue.js.+/s)
 
     let [name, message] = search(/(\w+): *(.*)/, s)
@@ -923,7 +1771,13 @@ function getVueErrorInfo(e) {
         ch = Number(ch)
         if (caller.includes('.')) {
             let [className, method] = caller.split('.')
-            return { class: className, method, file, line: Number(), ch }
+            return {
+                class: className,
+                method,
+                file,
+                line: Number(),
+                ch,
+            }
         }
         return { caller, file, line }
         return { caller, file, line, ch }
@@ -1017,8 +1871,11 @@ function unique(a, b) {
         return store
     }
 
-    if (b) return a.filter((item) => !Array.from(b).includes(item))
-    return isArray(a) && a.length > 1 ? Array.from(new Set(a)) : a
+    if (b)
+        return Array.from(new Set(a.filter((item) => !Array.from(b).includes(item))))
+    return isArray(a) && a.length > 1
+        ? Array.from(new Set(a))
+        : a
 }
 
 function numbered(text) {
@@ -1026,7 +1883,9 @@ function numbered(text) {
     let count = 0
 
     if (isArray(text)) {
-        return text.map((item, i) => 1 + i + '  ' + item).join('\n')
+        return text
+            .map((item, i) => 1 + i + '  ' + item)
+            .join('\n')
     }
 
     function parser(s) {
@@ -1091,24 +1950,69 @@ function getClassString(x) {
 }
 
 function getClassMethods(s) {
-    return findall(/^    (?:async |def )?(\w+)\(/gm, s.toString())
+    return findall(
+        /^    (?:async |def )?(\w+)\(/gm,
+        s.toString()
+    )
 }
 function hasSharedKeys(a, b) {
-    return intersection(Object.keys(a), Object.keys(b)).length > 0
+    return (
+        intersection(Object.keys(a), Object.keys(b)).length > 0
+    )
 }
 function isPublic(s) {
     return test(/^\w+$/, s)
 }
+
+function getClassPropertiesFromString(s) {
+    const matches = findall(
+        /^    (?:(async|get|set) )?(\w+) *\(/gm,
+        s.toString()
+    )
+    return matches.map(([a, name]) => {
+        let type = 'method'
+        if (a == 'get') type = 'getter'
+        else if (a == 'set') type = 'setter'
+        return { type, name }
+    })
+}
+function readableProperties(obj) {
+    function runner(obj) {
+        if (isFunction(obj)) {
+            return obj.nam
+        }
+        if (isSet(obj) || isFunction(obj) || isArray(obj) || isPrimitive(obj)) return obj
+        let keys = Object.keys(obj)
+        //let keys = Object.getOwnPropertyNames(obj)
+            .filter(isPublic)
+
+        //console.log(keys)
+        return keys.reduce((acc, key, i) => {
+            const value = obj[key]
+            //console.log(value)
+            //console.log(key)
+            acc[key] = runner(value)
+            return acc
+        }, {})
+    }
+    return runner(obj)
+}
 function getClassProperties(obj) {
-    const props = reduce(Object.getOwnPropertyNames(obj).filter(isPublic), (x) => [x, obj[x]])
-    const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(obj))
+    const props = reduce(
+        Object.getOwnPropertyNames(obj).filter(isPublic),
+        (x) => [x, obj[x]]
+    )
+    const methods = Object.getOwnPropertyNames(
+        Object.getPrototypeOf(obj)
+    )
     pop(methods, 'constructor')
-    return { name: obj.constructor.name,  methods, ...props }
+    return { name: obj.constructor.name, methods, ...props }
 
     return Object.getOwnPropertyNames(s)
     console.log(s)
     let match
-    let regex = /^ *(?:this\.(\w+) *= *(\w+)?|(?:async )?(\w+)\(|get (\w+))/gm
+    let regex =
+        /^ *(?:this\.(\w+) *= *(\w+)?|(?:async )?(\w+)\(|get (\w+))/gm
     //let s = vars()
     const storage = new Storage({ unique: 1 })
     while ((match = regex.exec(s))) {
@@ -1167,11 +2071,18 @@ function functiongetter(x) {
 
 function removeAllComments(s) {
     return s.replace(/^ *\/\/.+\n*/gm, '')
-    return s.replace(/^ *([#]|<!--[^]*?-->|\/\/|\/\*[^]*?\*\/).*\n*/gm, '')
+    return s.replace(
+        /^ *([#]|<!--[^]*?-->|\/\/|\/\*[^]*?\*\/).*\n*/gm,
+        ''
+    )
 }
 
 function getLastWord(x) {
     return search('\\w+$', x)
+}
+
+function getSecondWord(x) {
+    return search('\\w+ (\\w+)', x)
 }
 
 function getFirstWord(x) {
@@ -1203,8 +2114,12 @@ function xsplit(s) {
 
 function removeComments(s, mode) {
     return s.replace(/^ *(\/\/|\/\*[^]*?\*\/).*\n*/gm, '')
-    if (mode == 'js') return s.replace(/^ *\/\/|\/\*[^]*?\*\/.*\n*/gm, '')
-    return s.replace(/^ *([#]|<!--[^]*?-->|\/\/|\/\*[^]*?\*\/).*\n*/gm, '')
+    if (mode == 'js')
+        return s.replace(/^ *\/\/|\/\*[^]*?\*\/.*\n*/gm, '')
+    return s.replace(
+        /^ *([#]|<!--[^]*?-->|\/\/|\/\*[^]*?\*\/).*\n*/gm,
+        ''
+    )
 }
 
 function search(regex, s, flags = '') {
@@ -1256,12 +2171,12 @@ function prepareIterable(data, mode) {
     //if (data.constructor.name == 'IndexedMap')
 }
 
-function indent(s, n = 4) {
+function indent(s, n = 4, tabs = 0) {
     if (!s) return ''
     if (!n) return s
-    if (!s.includes('\n')) return toSpaces(n) + s
+    if (!s.includes('\n')) return toSpaces(n, tabs) + s
     if (isArray(s)) return s.map((x) => indent(x, n))
-    return replace('^', toSpaces(n), s, 'gm')
+    return replace('^', toSpaces(n, tabs), s, 'gm')
 }
 
 function joined(arr) {
@@ -1320,9 +2235,8 @@ function insertText(s, payload, regex) {
     )
 }
 
-
 function isIterable(x) {
-    return isArray(x) || isObject(x)
+    return isArray(x) || isObject(x) || isSet(x)
 }
 
 function linegetter(x, regex = /\n+/) {
@@ -1380,8 +2294,8 @@ function isTrue(x) {
 }
 
 function isClassObject(x) {
-    const runner = (x)=> x && x.toString().startsWith('class')
-    return runner(x) || runner(x.constructor )
+    const runner = (x) => x && x.toString().startsWith('class')
+    return runner(x) || runner(x.constructor)
 }
 
 function isClass(x) {
@@ -1425,6 +2339,9 @@ function isYesterday(date) {
     return changeDate(datestamp(), -1) == date
 }
 
+function isDate(s) {
+    return test(/^\d{1,2}[-/]\d{1,2}[-/](?:\d{2}|\d{4})$/, s)
+}
 function isToday(date) {
     return datestamp() == date
 }
@@ -1449,15 +2366,22 @@ function insert(arr, item, index) {
     return arr
 }
 
+function getTabs(s) {
+    return (search(/^[\t ]*/, s) || '').replace(/    /g, '\t')
+}
+
 function getSpaces(s) {
     return search(/^ */, s) || ''
 }
 
 function rescape(s, delimiters) {
-    const rescapeRE = delimiters ? 
-        RegExp(`[${delimiters.replace(/[\[\]]/g, '\\$&')}]`, 'g') :
-        /[.\\[*+?()|^${}\[\]]/g
-        //console.log(rescapeRE)
+    const rescapeRE = delimiters
+        ? RegExp(
+              `[${delimiters.replace(/[\[\]]/g, '\\$&')}]`,
+              'g'
+          )
+        : /[.\\[*+?()|^${}\[\]]/g
+    //console.log(rescapeRE)
     return s.replace(rescapeRE, '\\$&')
 }
 
@@ -1476,36 +2400,83 @@ function spicyReplace(regex, rep, s) {
     console.log(prepareRegex(regex))
     return s.replace(prepareRegex(regex), parser)
 }
-function spicyTemplater(s, ref) {
+
+
+function templaterWithBackup(s, ref, backup, functionArgs) {
     if (!s.includes('$')) return s
-    let regex = /\$(\w+|\{.*?\})/g
+    let regex = /\$(\d+(?:\|[a-zA-Z]+)?|\{.*?\})/g
     return runner(s)
 
     function runner(s, fn) {
-    return s.replace(regex, (_, x) => {
-        if (x == 0) return s
-        if (test(/^{/, x)) {
-            x = x.slice(1, -1)
-            x = runner(x, quotify)
-            x = eval(x)
-            return x
-        }
-        let val = isArray(ref) ? ref[Number(x) - 1] : ref[x]
-        if (val == null) val = ''
-        if (isFunction(val)) {
-            val = val(x)
-        }
-        return fn ? fn(val) : val
-    })
-    }
+        return s.replace(regex, (_, x) => {
+            if (x == 'c') {
+                return '$c'
+            }
+            if (x == 0) return s
+            if (test(/^{/, x)) {
+                x = x.slice(1, -1)
+                x = runner(x, quotify)
+                x = eval(x)
+                return x
+            }
 
+            let [n, other] = search(/^(\d+)\|?(\w*)/, x)
+            let value = ref[Number(n) - 1]
+            if (value == null && other) {
+                value = backup[other]
+                if (value == null) value = other
+            }
+            if (isFunction(value)) {
+                value = value(...functionArgs)
+            }
+
+            return fn ? fn(value) : value
+        })
+    }
 }
 
 
-function templater(s, ref) {
+function spicyTemplater(s, ref, ...args) {
+    if (!s.includes('$')) return s
+    let regex = /\$(\d+|\w+|\{.*?\})/g
+    return runner(s)
+
+    function runner(s, fn) {
+        return s.replace(regex, (_, x) => {
+            //console.log([x, 'st'])
+            if (x == 'c') {
+                return '$c'
+            }
+            if (x == 0) return s
+            if (test(/^{/, x)) {
+                x = x.slice(1, -1)
+                x = runner(x, quotify)
+                x = eval(x)
+                return x
+            }
+
+            let val = isArray(ref) ? ref[Number(x) - 1] : ref[x]
+            if (val == null) val = ''
+            if (isFunction(val)) {
+                val = val(...args)
+                //val = val(x, ...args)
+            }
+            return fn ? fn(val) : val
+        })
+    }
+}
+
+function reverse(s) {
+    if (isArray(s)) {
+        return s.reverse()
+    }
+    return split(s).reverse().join('')
+}
+function templater(s, ref, keep) {
     if (!s.includes('$')) return s
 
-    if (!ref) return s.replace(/\$\{(.*?)\}/g, (_, x) => eval(x))
+    if (!ref)
+        return s.replace(/\$\{(.*?)\}/g, (_, x) => eval(x))
     let regex = /\$(\w)/g
     if (isPrimitive(ref)) {
         ref = [ref]
@@ -1517,8 +2488,12 @@ function templater(s, ref) {
     let offset = s.includes('$0') ? 0 : 1
     let value = s.replace(regex, (_, x) => {
         if (x == 'c') return '$c'
-        let val = isArray(ref) ? ref[Number(x) - offset] : ref[x]
-        if (val == null) val = ''
+        let val = isArray(ref)
+            ? ref[Number(x) - offset]
+            : ref[x]
+        if (val == null) {
+            return keep ? '$' + x : ''
+        }
         if (isFunction(val)) {
             functionals.push(val)
             return '###'
@@ -1549,7 +2524,11 @@ function hasCaptureGroup(s) {
 
 function getIndent(s) {
     if (isNumber(s)) return s
-    return getSpaces(s).length
+    const match = s.match(/^[\t ]*/g)
+    if (!match) return 0
+    return match[0].split('').reduce((acc, item, i) => {
+        return acc += item == '\t' ? 4 : 1
+    }, 0)
 }
 
 function identity(...args) {
@@ -1564,16 +2543,15 @@ class AssertionErrorHandler {
     constructor(fn) {
         try {
             fn()
-        }
-        catch (e) {
+        } catch (e) {
             console.log([e.name, e.line])
         }
     }
 }
-class AssertionError extends Error { 
+class AssertionError extends Error {
     constructor(x) {
         super()
-        const {name, line} = getCaller('assert')
+        const { name, line } = getCaller('assert')
         this.name = name
         this.line = line
     }
@@ -1587,7 +2565,10 @@ function assert(condition) {
     if (!condition || !exists(condition)) {
         const stack = getStackTrace()
         //console.log(stack)
-        const name = stack[stack.findIndex((x) => x[0] == 'assert') + 1][0]
+        const name =
+            stack[
+                stack.findIndex((x) => x[0] == 'assert') + 1
+            ][0]
         const error = assert.caller
             .toString()
             .match(/assert\((.*?)\) *(?=\n|$)/)[1]
@@ -1602,16 +2583,24 @@ function parens(s) {
 }
 
 function len(x) {
+    if (!exists(x)) {
+        return 0
+    }
     if (isNumber(x)) return x.toString().length
     return x.length || Object.keys(x).length || 0
 }
 
 function hasNumber(x) {
-    return (isString(x) && test(/\d/, x)) || typeof x == 'number'
+    return (
+        (isString(x) && test(/\d/, x)) || typeof x == 'number'
+    )
 }
 
 function sum(items, fn) {
-    return items.reduce((acc, item, i) => (acc += fn ? fn(item, i) : item), 0)
+    return items.reduce(
+        (acc, item, i) => (acc += fn ? fn(item, i) : item),
+        0
+    )
 }
 
 function recursiveFlat(...args) {
@@ -1631,8 +2620,7 @@ function recursiveFlat(...args) {
 function flat(arr) {
     const store = []
     for (let item of arr) {
-        if (isArray(item)) store.push(...item)
-        else store.push(item)
+        push(store, item)
     }
     return store
 }
@@ -1671,7 +2659,11 @@ function toVariable(name, value, lang, prefix = 'var ') {
     const payload = isString(value)
         ? isJsonParsable(value)
             ? value
-            : quotify(value.replace(/\`/g, '\\`').replace(/\$\{/g, '\\$\\{'))
+            : quotify(
+                  value
+                      .replace(/\`/g, '\\`')
+                      .replace(/\$\{/g, '\\$\\{')
+              )
         : toStringArgument(value)
 
     return prefix + name + ' = ' + payload
@@ -1690,15 +2682,36 @@ function tail(s) {
 
 function bindObject(state, object) {
     if (!exists(object)) {
-        return 
+        return
     }
     for (let [k, v] of Object.entries(object)) {
         if (isFunction(v)) {
             state[k] = v.bind(state)
-        }
-        else {
+        } else {
             state[k] = v
         }
+    }
+}
+
+function initializeStateVariable(state, key, value) {
+    if (!state.hasOwnProperty(key)) {
+        state[key] =
+            arguments.length == 4
+                ? {}
+                : key.endsWith('s')
+                ? []
+                : null
+    }
+    const f = type(state[key])
+    switch (f) {
+        case 'Set':
+            return state[key].add(value)
+        case 'Array':
+            return state[key].push(value)
+        case 'Object':
+            return (state[key][arguments[2]] = arguments[3])
+        default:
+            state[key] = value
     }
 }
 
@@ -1708,7 +2721,60 @@ function bind(state, fnKey) {
 function fparse(x, ...args) {
     return isFunction(x) ? x(...args) : x
 }
-class Cache extends StandardObject {
+class Cache {
+    constructor(cache = {}) {
+        this.cache = isFunction(cache) ? new cache() : cache
+        const name = this.cache.constructor.name
+        this.get = this['get' + name]
+        this.set = this['set' + name]
+        this.clear = this['clear' + name]
+        this.update = this['update' + name]
+    }
+    updateWeakMap(key, value) {
+        const prev = this.get(key)
+        this.cache.set(key, merge(prev, value))
+    }
+
+    setWeakMap(key, value) {
+        this.cache.set(key, value)
+    }
+
+    setObject(key, value) {
+        this.cache[key] = value
+    }
+
+    updateObject(key, value) {
+        const prev = this.get(key)
+        this.set(key, merge(prev, value))
+    }
+
+    clearObject() {
+        this.cache = {}
+    }
+    clearWeakMap() {
+        this.cache = new WeakMap()
+    }
+    getWeakMap(key, value) {
+        if (this.cache.has(key)) {
+            const cachedValue =  this.cache.get(key)
+            return cachedValue
+        }
+        if (isFunction(value)) value = value(key)
+        this.cache.set(key, value)
+        return value
+    }
+
+    getObject(key, value) {
+        if (this.cache.hasOwnProperty(key)) {
+            return this.cache[key]
+        }
+        if (isFunction(value)) value = value(key)
+        this.cache[key] = value
+        return value
+    }
+    
+}
+class Cacheold extends StandardObject {
     constructor() {
         super()
     }
@@ -1740,7 +2806,9 @@ function getLongestOld(arr, measure = len, mode = Number) {
             if (!item) return acc
             const itemLength = measure(item, i)
             if (mode == Number) return Math.max(itemLength, acc)
-            const accLength = isNumber(acc) ? acc : measure(acc, i)
+            const accLength = isNumber(acc)
+                ? acc
+                : measure(acc, i)
             return accLength > itemLength ? acc : item
         },
         mode == Number ? 0 : arr[0]
@@ -1749,17 +2817,24 @@ function getLongestOld(arr, measure = len, mode = Number) {
     return value
 }
 
-function dreplace(s, dict, regexTemplate = '\\b(?:$1)\\b', flags = 'g') {
+function splitSpellcheck(s, dict) {
+    return split(s)
+        .map((x) => dict[x] || x)
+        .join(' ')
+}
+function dreplace(
+    s,
+    dict,
+    regexTemplate = '\\b(?:$1)\\b',
+    flags = 'g'
+) {
     let escape
     if (regexTemplate === null) {
         regexTemplate = '(?:$1)'
-    }
-
-    else if (regexTemplate == 'ge') {
+    } else if (regexTemplate == 'ge') {
         flags = regexTemplate
         regexTemplate = '(?:$1)'
-    }
-    else if (regexTemplate == 'ge') {
+    } else if (regexTemplate == 'ge') {
         flags = regexTemplate
         regexTemplate = '(?:$1)'
     } else if (regexTemplate.length < 5) {
@@ -1794,7 +2869,7 @@ function dreplace(s, dict, regexTemplate = '\\b(?:$1)\\b', flags = 'g') {
 
 function ncg(template, ref, escape) {
     //if (isString(template) && isString(escape)) {
-        //ref = toArray(ref)
+    //ref = toArray(ref)
     //}
     //
     if (typeof template == 'object' && !ref) {
@@ -1815,7 +2890,11 @@ function ncg(template, ref, escape) {
 
     if (!ref && isIterable(template)) {
         return '\\b(?:' + ncgRunner(template, escape) + ')\\b'
-    } else if (!isPrimitive(ref) && ref[0] && !isPrimitive(ref[0])) {
+    } else if (
+        !isPrimitive(ref) &&
+        ref[0] &&
+        !isPrimitive(ref[0])
+    ) {
         let value = templater(
             template,
             ref.map((el) => ncgRunner(el, escape))
@@ -1828,30 +2907,70 @@ function ncg(template, ref, escape) {
 
     function ncgRunner(ref, escape) {
         return isBoolean(escape)
-            ? prepareIterable(ref, 'keys').map(rescape).join('|')
+            ? prepareIterable(ref, 'keys')
+                  .map(rescape)
+                  .join('|')
             : prepareIterable(ref, 'keys').join('|')
     }
 }
 
-function filterObject(items, fn) {
+function filterObjectHelper(items, fn) {
+    if (isFunction(fn)) {
+        if (getParameters(fn).length == 2) {
+            return Object.entries(items).filter(([a, b]) => {
+                return fn(a, b)
+            })
+        } else {
+            return Object.entries(items).filter(([a, b]) => {
+                return fn(b)
+            })
+        }
+    } else if (isArray(fn)) {
+        return Object.entries(items).filter(([a, b]) => {
+            return fn.includes(a)
+        })
+    }
+}
+
+function filter(items, fn, mode) {
+    if (isObject(items)) {
+        const value = filterObjectHelper(items, fn)
+
+        return mode == 'keys'
+            ? value.map((x) => x[0])
+            : mode == 'values'
+            ? value.map((x) => x[1])
+            : mode == Array
+            ? value
+            : toDictionary(value)
+    }
+}
+
+function filterObject(items, fn, mode) {
+    const value = Object.entries(items).filter((x) => fn(...x))
+    if (mode == 'keys') return value.map((x) => x[0])
+    if (mode == 'values') return value.map((x) => x[1])
+    return value.reduce((acc, [a,b]) => ({...acc, [a]:b}), {})
+}
+
+function oldfilterObject(items, fn) {
     function reducer(items, gn) {
         const store = {}
         for (let [a, b] of prepareIterable(items, 'entries')) {
-            const value = gn(a,b)
+            const value = gn(a, b)
             if (exists(value)) {
                 if (value.length == 2 && isArray(value)) {
                     store[value[0]] = value[1]
-                }
-                else {
+                } else {
                     store[a] = value
                 }
             }
         }
         return store
     }
-    return getParameters(fn).length == 1 ?
-         reducer(items, (k, v) => fn(v) ? v : null) :
-         reducer(items, (k, v) => (fn(k, v) ? v : null))
+    return getParameters(fn).length == 1
+        ? reducer(items, (k, v) => (fn(v) ? v : null))
+        : reducer(items, (k, v) => (fn(k, v) ? v : null))
 }
 
 // the english is hard.
@@ -1861,7 +2980,10 @@ function filtered(items, fn) {
     }
 
     items = Array.from(items)
-    if (isString(fn)) return items.filter((x) => exists(x) && test(fn, x, 'i'))
+    if (isString(fn))
+        return items.filter(
+            (x) => exists(x) && test(fn, x, 'i')
+        )
     if (isFunction(fn)) return items.filter(fn)
     if (isArray(fn)) return items.filter((x) => !fn.includes(x))
 }
@@ -1904,7 +3026,7 @@ function ftest(x, s, flags = 'i') {
 
 function mapObject(a, b) {
     if (isObject(b)) {
-        return reduce(a, (k,v) => {
+        return reduce(a, (k, v) => {
             return b[k] ? [k, b[k]] : null
         })
     }
@@ -1952,12 +3074,28 @@ function mapConditional(a, b, c) {
         }
 
         if (isString(a)) {
-            throw new Error('must be regex or function for mapconditional')
+            throw new Error(
+                'must be regex or function for mapconditional'
+            )
         }
     }
 }
 
-function merge(...args) {
+function merge(a, b) {
+    if (!b) return a
+    if (!a) return b
+    if (isObject(a)) {
+        return Object.assign(a, b)
+    }
+    if (isArray(a)) {
+        return push(a, b, true)
+    }
+    if (isString(a)) {
+        return a + b
+    }
+    return b
+}
+function mergeAll(...args) {
     args = args.filter(exists)
     let first = args[0]
 
@@ -1975,7 +3113,10 @@ function merge(...args) {
 
     if (isArray(first)) {
         for (let arg of args) {
-            if (arg) isArray(arg) ? first.push(...arg) : first.push(arg)
+            if (arg)
+                isArray(arg)
+                    ? first.push(...arg)
+                    : first.push(arg)
         }
         return first
     }
@@ -2001,7 +3142,7 @@ function tryval(s, ...args) {
         }
         return {
             input: smallify(s),
-            value: eval(s)
+            value: eval(s),
         }
     } catch (e) {
         return {
@@ -2010,7 +3151,6 @@ function tryval(s, ...args) {
         }
     }
 }
-
 
 function shuffle(arr) {
     const ref = Array.from(arr)
@@ -2023,20 +3163,162 @@ function shuffle(arr) {
     }
     return ref
 }
-
 class Clock {
-    static async create(n = 5, fn = null) {
-        let clock = new Clock(n, fn)
-        await clock.start()
+    finish() {
+        this._stop = true
+        clearTimeout(this.timerID)
+        this.onEnd()
+    }
+    constructor(options) {
+        this.increment = 1000
+        this.speed = 1
+        this.onTick = console.log
+        Object.assign(this, options)
+        this.delta = this.increment / this.speed
+        if (this.duration <= 100) this.duration *= 1000
+        assert(this.duration)
+        this.start()
+    }
+    pause() {
+        this._pause = true
+    }
+    async start() {
+        if (this._pause) {
+            this._pause = false
+            this.count += 1
+        } else {
+            this.count = 0
+            this._stop = false
+        }
+        return await this.runner()
+    }
+
+    stop() {
+        this._stop = true
+    }
+    async resume() {
+        this._stop = false
+        await this.runner()
+    }
+
+    runner() {
+        if (this._onStart) {
+            this._onStart()
+        } else {
+            this._onTick()
+        }
+
+        return new Promise((resolve, reject) => {
+            const runner = () => {
+                if (this.isDone()) {
+                    clearTimeout(this.timerID)
+                    if (this._onEnd) {
+                        this._onEnd()
+                    }
+                    resolve()
+                } else if (this._pause) {
+                    clearTimeout(this.timerID)
+                    resolve()
+                } else {
+                    this.count += 1
+                    this.timerID = setTimeout(() => {
+                        if (this._onTick) this._onTick()
+                        runner()
+                    }, this.delta)
+                }
+            }
+
+            runner()
+        })
+    }
+
+    at(n, fn) {
+        let current = this._onTick
+        this._onTick = () => {
+            this.count == n ? this.handle(fn(this)) : current()
+        }
+    }
+
+    set onTick(fn) {
+        this._onTick = () =>
+            this.handle(fn(this.timeLeft))
+    }
+    set onStart(fn) {
+        this._onStart = () =>
+            fn(this.timeLeft)
+    }
+
+    set onEnd(fn) {
+        this._onEnd = () =>
+            fn(this.timeLeft)
+    }
+    get onEnd() {
+        return this._onEnd
+    }
+
+    isDone() {
+        return (this.count >= this._duration) || this._stop
+    }
+    get timeLeft() {
+        return this._duration - this.count
+    }
+    get _duration() {
+        return Math.floor(this.duration / 1000)
+    }
+
+    handle(result) {
+        if (result === 'DONE') {
+            this._stop = true
+        } 
+        else if (isNumber(result)) {
+            this.duration += result * 1000
+        } 
+    }
+}
+
+
+class oldClock {
+    createClock(o) {
+        if (this.currentClock) {
+            this.currentClock.abort()
+        }
+        this.currentClock = Clock.create(o)
+        return this.currentClock
+    }
+    static async input(onTick, duration = Infinity) {
+        let clock = new Clock({onTick, duration})
+        clock.config.onTickEndResult = true
+        return await clock.start()
+    }
+
+    static create(o) {
+        let clock = new Clock(o)
+        clock.start()
+        return clock
     }
     setOptions(options) {
         if (!options) return
+        if (options.config) {
+            Object.assign(this.config, options.config)
+        }
         if (options.duration) this.duration = options.duration
-        if (options.increment) this.increment = options.increment
-        if (options.steps) this.increment = this.duration / options.steps
-        if (options.onTick) this.onTick = options.onTick.bind(this)
+        if (options.increment)
+            this.increment = options.increment
+        if (options.steps)
+            this.increment = this.duration / options.steps
+        if (options.onTick) this.onTick = options.onTick
+        if (options.onEnd) this.onEnd = options.onEnd
+        if (options.onStart) this.onStart = options.onStart
+    }
+    abort() {
+        console.log('aborting')
+        this._onEnd = null
+        this._stop = true
     }
     constructor(options = 3) {
+        this.config = {
+            onTickEndResult: 0,
+        }
         this.increment = 1000
         this.speed = 1
 
@@ -2065,19 +3347,19 @@ class Clock {
             //this.currentTime = null
             this._pause = false
             this.count += 1
-        }
-        else {
-            if (duration) {
-                this.duration = duration == Infinity ? 
-                100000 : duration
-            }
+        } else {
+            if (duration) this.duration = duration
+                //console.log(this.duration)
             if (this.duration <= 100) this.duration *= 1000
+            else if (this.duration == Infinity) {
+                this.duration = 1000 * 1000
+            }
 
             this._duration = this.duration / 1000
             this.count = 0
             this._stop = false
         }
-        await this.runner()
+        return await this.runner()
     }
 
     stop() {
@@ -2089,10 +3371,8 @@ class Clock {
         await this.runner()
     }
     resetClock(count) {
-
-            console.log('reset clock')
-            this.timeRemaining = null
-            this.currentTime = null
+        this.timeRemaining = null
+        this.currentTime = null
         this.duration = 0
         this.count = 0
         this._pause = 0
@@ -2100,30 +3380,26 @@ class Clock {
     }
 
     runner() {
-        this._onStart = this._onTick
         if (this._onStart) {
             this._onStart()
+        } else {
+            this._onTick()
         }
 
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             const runner = () => {
                 if (this.isDone()) {
                     clearTimeout(this.timerID)
-                    if (this._onFinish) {
-                        this._onFinish()
+                    if (this._onEnd) {
+                        this._onEnd()
                     }
                     this.resetClock(this.count)
-                    resolve()
-                } 
-                else if (this._pause) {
-                    //this.currentTime = this.count
-                    //this.timeRemaining = this.duration - this.count * this.increment
-                    //console.log(this.timeRemaining, this.currentTime)
+                    //console.log(this.endValue, 'endv')
+                    resolve(this.endValue)
+                } else if (this._pause) {
                     clearTimeout(this.timerID)
                     resolve()
-                }
-                
-                else {
+                } else {
                     this.count += 1
                     this.timerID = setTimeout(() => {
                         if (this._onTick) this._onTick()
@@ -2144,39 +3420,54 @@ class Clock {
     }
 
     set onTick(fn) {
-        //this._onTick = () =>
-            //this.handle(fn(this.count, this.timeLeft, this.duration))
+        this._onTick = () =>
+            this.handle(
+                fn(this.count, this.timeLeft, this.duration)
+            )
 
-        this._onTick = async () =>
-            this.handle(fn(this.count, this.timeLeft, this.duration))
+        //this._onTick = async () =>
+        //this.handle(fn(this.count, this.timeLeft, this.duration))
     }
 
-    set onFinish(fn) {
-        this._onFinish = () => fn(this.count, this.timeLeft, this.duration)
+    set onStart(fn) {
+        this._onStart = () =>
+            fn(this.count, this.timeLeft, this.duration)
+    }
 
-        //fn(this.timeLeft, this.count, this.duration)
+    set onEnd(fn) {
+        this._onEnd = () =>
+            fn(this.count, this.timeLeft, this.duration)
     }
 
     isDone() {
         return this.count >= this._duration || this._stop
     }
     get timeLeft() {
+        //console.log(this.count, this._duration)
         return this._duration - this.count
     }
 
     handle(result) {
-        if (result === true) {
+        if (result === 'DONE') {
+            this._stop = true
+        } 
+
+        if (this.config.onTickEndResult && result) {
+            //console.log('yielding an endValue from onTick')
+            this._stop = true
+            this.endValue = result
+        }
+        
+        else if (result === true) {
             if (this.timeLeft) {
                 this._pause = true
-            }
-            else {
+            } else {
                 this._stop = true
             }
-        }
-        else if (isNumber(result)) {
+        } else if (isNumber(result)) {
             this.duration += result * 1000
             this._duration += result
-        }
+        } 
     }
 }
 
@@ -2227,9 +3518,12 @@ function char2n(ch) {
     return ch.toLowerCase().charCodeAt(0) - 97
 }
 
-function newlineIndent(s) {
+function newlineIndent(s, n = 4) {
+    if (!s) {
+        return ''
+    }
     s = isArray(s) ? s.join('\n') : s
-    return wrap(indent(s.replace(/^\n+/, '').trimEnd(), 4))
+    return wrap(indent(s.replace(/^\n+/, '').trimEnd(), n))
 }
 
 class Storage {
@@ -2248,6 +3542,7 @@ class Storage {
     }
     constructor() {
         this.store = {}
+        this.watcher = new Watcher()
         const options = {
             _mode: Array,
             unique: false,
@@ -2263,6 +3558,8 @@ class Storage {
         } else if (arguments.length == 1) {
             if (hasSharedKeys(arguments[0], options)) {
                 Object.assign(this, arguments[0])
+            } else if (arguments[0] == Number) {
+                this._mode = Number
             } else {
                 this.store = arguments[0]
             }
@@ -2314,7 +3611,9 @@ class Storage {
         return this.store.hasOwnProperty(k)
     }
     forEach(fn) {
-        return Object.entries(this.store).forEach(([k, v]) => fn(k, v))
+        return Object.entries(this.store).forEach(([k, v]) =>
+            fn(k, v)
+        )
     }
     reset(k) {
         if (!k) {
@@ -2390,7 +3689,9 @@ class Storage {
 
     addNumber(k, v) {
         v = v == null ? 1 : Number(v)
-        return this.store[k] ? (this.store[k] += v) : (this.store[k] = v)
+        return this.store[k]
+            ? (this.store[k] += v)
+            : (this.store[k] = v)
     }
 
     addString(k, v) {
@@ -2411,9 +3712,13 @@ class Storage {
         }
 
         if (isArray(v) && this.mergeArray) {
-            this.store[k] ? this.store[k].push(...v) : (this.store[k] = v)
+            this.store[k]
+                ? this.store[k].push(...v)
+                : (this.store[k] = v)
         } else {
-            this.store[k] ? this.store[k].push(v) : (this.store[k] = [v])
+            this.store[k]
+                ? this.store[k].push(v)
+                : (this.store[k] = [v])
         }
     }
 
@@ -2428,7 +3733,12 @@ class Storage {
 
 function modularIncrement(arr, item, increment = 1) {
     if (isNumber(arr)) {
-        return modularIncrementNumber(Number(arr), item, increment, arguments[3] || 9)
+        return modularIncrementNumber(
+            Number(arr),
+            item,
+            increment,
+            arguments[3] || 9
+        )
     }
     if (isFunction(increment)) {
         return modularIncrementFn(arr, item, increment)
@@ -2472,7 +3782,18 @@ function modularIncrementFn(arr, index, fn) {
     return null
 }
 
-function mreplace(regex, replacement, s, flags = 'g', singular = false) {
+function mreplaceObject(o) {}
+function mreplace(
+    regex,
+    replacement,
+    s,
+    flags = 'g',
+    singular = false
+) {
+    if (arguments.length == 1) {
+        return mreplaceObject(regex)
+    }
+
     if (arguments.length == 2) {
         replacement = ''
         s = arguments[1]
@@ -2484,34 +3805,43 @@ function mreplace(regex, replacement, s, flags = 'g', singular = false) {
         singular = arguments[2]
     }
 
+    if (!regex.flags || !flags.includes('g')) singular = true
+    if (!test(regex, s, flags)) {
+        return [s, singular ? null : []]
+    }
+
     const store = []
     const sliceBy = hasCaptureGroup(regex) ? 1 : 0
 
     function parser(...args) {
         args = args.slice(sliceBy, -2).filter((x) => x != null)
         store.push(smallify(args))
-        return isString(replacement) ? replacement : replacement(...args)
+        return isString(replacement)
+            ? replacement
+            : replacement(...args)
     }
 
-    if (!regex.flags || !flags.includes('g')) singular = true
-
-    const text = replace(regex, parser, s.trim(), flags)
+    const text = replace(regex, parser, s, flags)
+        /* nnoremap trim */
         .replace(/^\n+/, '')
         .trimEnd()
+
     if (singular) return [text, smallify(store)]
     return [text, store]
 }
 
 function sleep(delay = 3000) {
-    if (delay < 50) delay *= 1000
+    delay = toMilliseconds(delay)
     return new Promise((resolve) => setTimeout(resolve, delay))
 }
 
-function parseJSON(s) {
+function parseJSON(s, functionStringRevive) {
     if (/^[\d/]+$/.test(s)) {
         return Number(s)
     }
-    return isJsonParsable(s) ? JSON.parse(s) : s
+    return isJsonParsable(s)
+        ? JSON.parse(s, functionStringRevive)
+        : s
 }
 
 function splitonce(s, delimiter = '\\s+') {
@@ -2563,6 +3893,10 @@ function splitOnceReverse(s, deli) {
     return [items.slice(0, -1), getLast(items)]
 }
 function split(s, regex = / +/, flags = '') {
+    if (isNumber(s)) {
+        return s.toString().split('').map(Number)
+    }
+
     if (isArray(s)) {
         let temp = []
         let big = []
@@ -2584,14 +3918,19 @@ function split(s, regex = / +/, flags = '') {
         }
         return big
     }
-    if (isNumber(regex)) return [s.slice(0, regex), s.slice(regex)]
-    regex = regexed(regex, flags)
+    if (isNumber(regex))
+        return [s.slice(0, regex), s.slice(regex)]
+    regex = isString(regex) ? regex : regexed(regex, flags)
     return s.trim().split(regex).filter(exists).map(trimmed)
 }
 
 function regexed(regex, flags = '') {
-    const addMultiLine = (x) => (/^.?\^/.test(regex) ? x + 'm' : x)
-    return isString(regex) ? RegExp(regex, addMultiLine(flags)) : regex
+    if (regex == '.') return regex
+    const addMultiLine = (x) =>
+        /^.?\^/.test(regex) ? x + 'm' : x
+    return isString(regex)
+        ? RegExp(regex, addMultiLine(flags))
+        : regex
 }
 function paired(list, mode = Array) {
     const store = mode == Object ? {} : []
@@ -2614,7 +3953,10 @@ function depluralize(s) {
 }
 
 function intersection(a, b) {
-    return a.filter((x) => b.includes(x)) || b.filter((x) => a.includes(x))
+    return (
+        a.filter((x) => b.includes(x)) ||
+        b.filter((x) => a.includes(x))
+    )
 }
 
 function shared(a, b) {
@@ -2622,6 +3964,7 @@ function shared(a, b) {
 }
 
 function changeDate(s, increment) {
+    if (!increment) return s
     return s.replace(
         /-\d+/,
         (x) => '-' + zeroPad(Number(x.slice(1)) + increment)
@@ -2630,7 +3973,9 @@ function changeDate(s, increment) {
 
 function sortByDependencies(items, reducer, ref) {
     const dependencies = items.reduce((acc, item, i) => {
-        acc[item] = isFunction(reducer) ? reducer(item) : findall(reducer, item)
+        acc[item] = isFunction(reducer)
+            ? reducer(item)
+            : findall(reducer, item)
         return acc
     }, {})
 
@@ -2645,7 +3990,12 @@ function sortByDependencies(items, reducer, ref) {
         length = keys.length
         i = 0
         while (i < keys.length) {
-            if (dependencies[keys[i]].every(Set.prototype.has, seen)) {
+            if (
+                dependencies[keys[i]].every(
+                    Set.prototype.has,
+                    seen
+                )
+            ) {
                 item = keys.splice(i, 1)[0]
                 result.push(item)
                 seen.add(item)
@@ -2659,6 +4009,7 @@ function sortByDependencies(items, reducer, ref) {
 }
 
 function copy(x) {
+    // what could go wrong with this?
     return JSON.parse(JSON.stringify(x))
 }
 
@@ -2671,7 +4022,9 @@ function toDashCase(s) {
 }
 
 function toSnakeCase(s) {
-    return s.replace(/[a-z][A-Z]/g, (x) => x[0] + '-' + x[1]).toLowerCase()
+    return s
+        .replace(/[a-z][A-Z]/g, (x) => x[0] + '-' + x[1])
+        .toLowerCase()
 }
 
 function toStringObject(x) {
@@ -2748,13 +4101,24 @@ function toPascal(s) {
 }
 
 function toCamelCase(s) {
-    return uncapitalize(s.trim().replace(/[- ]\w/g, (x) => x.slice(1).toUpperCase()))
+    return uncapitalize(
+        s
+            .trim()
+            .replace(/[- ]\w/g, (x) => x.slice(1).toUpperCase())
+    )
 }
 
+function toggleVue(state, key, value, duration = 1000) {
+    let from = state[key]
+    let to = value
+    toggle(state, key, from, to, duration)
+}
 function toggle(state, key, from, to, duration = 750) {
+    let value
     if (arguments.length == 2) {
-        if (isBoolean(state[key])) state[key] = !state[key]
-        return
+        value = !state[key]
+        if (isBoolean(state[key])) state[key] = value
+        return value
     }
 
     if (arguments.length == 3) {
@@ -2779,7 +4143,10 @@ function toggle(state, key, from, to, duration = 750) {
 
 function toDictionary(items, kt, vt) {
     if (!isNestedArray(items)) items = paired(items)
-    return reduce(items, (k, v) => [kt ? kt(k) : k, vt ? vt(v) : v])
+    return reduce(items, (k, v) => [
+        kt ? kt(k) : k,
+        vt ? vt(v) : v,
+    ])
 }
 
 function toLiteralArray(s) {
@@ -2790,7 +4157,19 @@ function toInteger(x) {
     return Math.round(x)
 }
 
-const roygbiv = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet']
+const roygbiv = [
+    'red',
+    'orange',
+    'yellow',
+    'green',
+    'blue',
+    'indigo',
+    'violet',
+    'white',
+    'black',
+    'purple',
+    'pink',
+]
 
 function numberToWord(n) {
     return numberWords[n]
@@ -2831,6 +4210,10 @@ function hasWord(s) {
     return /[a-zA-Z]{3,}/.test(s)
 }
 
+function hasLookBehind(s) {
+    return test(/\(\?\</, s.toString())
+}
+
 function hasLookAround(s) {
     return test(/\(\?\</, s.toString())
 }
@@ -2850,17 +4233,34 @@ function stringcall(fn, ...args) {
     if (isFunction(fn)) {
         fn = fn.name
     }
-    return fn + parens(args.filter(exists).join(', '))
+    return fn + parens(gatherArgs(args).filter(exists).join(', '))
 }
 
-function dedent(s) {
+function dedent(s, unit) {
+    if (unit) {
+        return replace('^' + unit, '', s)
+    }
     s = s.trimEnd().replace(/^\n+/, '')
     const spaces = getSpaces(s)
     return replace('^' + spaces, '', s)
 }
 
-function getWords(s, min = 1, max = 100) {
-    const regex = RegExp(`[a-zA-Z]{${min},${max}}`, 'g')
+function getWords(s, { mode = 's', min = 3, max = 50 } = {}) {
+    let numbers = ''
+    let extra = ''
+    if (mode == 'code') {
+        extra += '.'
+        numbers += '\\d*'
+    }
+
+    if (mode == 'css') {
+        extra += '-'
+    }
+
+    const regex = RegExp(
+        `[a-zA-Z${extra}]{${min},${max}}${numbers}`,
+        'g'
+    )
     return s.match(regex) || []
 }
 
@@ -2917,7 +4317,6 @@ function isStorage(x) {
     return test(/Storage/, x.constructor.name)
 }
 
-
 function isNewLine(s) {
     return /^\n+$/.test(s)
 }
@@ -2953,41 +4352,62 @@ function iter(items, fn, ...args) {
     })
 }
 
+const StringMixins = {
+    trim() {
+        this.s = this.s.trim()
+    },
+    mreplace(regex) {
+        const [s, match] = mreplace(regex, this.s)
+        this.s = s.trim()
+        return match
+    },
+}
+
+function mixin(state, mixin, ...keys) {
+    if (keys.length == 0) keys = Object.keys(mixin)
+    for (let key of gatherArgs(keys)) {
+        const value = mixin[key]
+        if (isObject(value)) {
+            Object.defineProperty(state, key, value)
+        } else {
+            state[key] = value.bind(state)
+        }
+    }
+}
+
 class Eater {
+    static eatStart(regex, s) {
+        let m = search('^' + regex, s.trim())
+        s = s.trim()
+        if (m) return [s.slice(m), m]
+        return [s, null]
+    }
+
     constructor(regex) {
         this.regex = regex
         this.store = []
+        mixin(this, StringMixins, 'trim', 'mreplace')
     }
     eatStart(regex) {
-        const [s, match] = eatStart(regex, s)
-        this.s = s.trim()
+        const [s, match] = Eater.eatStart(regex, s)
         if (!match) return 1
         this.store.push(match)
     }
 
     eat(regex) {
-        console.log(this.regex)
-        const [s, match] = mreplace(regex || this.regex, this.s)
-        console.log(match)
-        this.s = s.trim()
+        const match = this.mreplace(regex)
         if (!match) return 1
         this.store.push(match)
     }
+
     run(s) {
         this.s = s.trim()
         while (true) {
             const done = this.eat()
-            this.trimSpaces()
+            this.trim()
             if (done) break
         }
         return [this.s, this.store]
-    }
-    get dict() {
-        return
-    }
-
-    trimSpaces() {
-        this.s = this.s.trim()
     }
 }
 
@@ -2997,12 +4417,6 @@ function notNull(s) {
 
 function trimSpaces(s) {
     return s.replace(/^ +| +$/g, '')
-}
-
-function eatStart(regex, s) {
-    let m = search('^' + regex, s.trim())
-    if (m) return [s.slice(m), m]
-    return [s, null]
 }
 
 class Matrix {
@@ -3037,7 +4451,9 @@ class Matrix {
 
             this.store = x
             this.width = width
-            this.height = Math.ceil(this.store.length / this.width)
+            this.height = Math.ceil(
+                this.store.length / this.width
+            )
         }
     }
 
@@ -3084,7 +4500,9 @@ class Matrix {
 }
 
 function getStrings(s) {
-    return findall(/\'.*?\'|\".*?\"/g, s).map((x) => x.slice(1, -1))
+    return findall(/\'.*?\'|\".*?\"/g, s).map((x) =>
+        x.slice(1, -1)
+    )
 }
 
 function normalizeSpaces(s) {
@@ -3126,11 +4544,11 @@ function partial(fn, arg) {
     }
 }
 
-function toStringArgument(x) {
+function toStringArgument(x, quotes) {
     function parseObj(obj) {
         let s = '{\n'
         for (let [k, v] of Object.entries(obj)) {
-            s += indent(k + ': ' + parse(v)) + ',\n'
+            s += indent(singlequote(k) + ': ' + parse(v)) + ',\n'
         }
         s += '}'
         return s
@@ -3146,8 +4564,12 @@ function toStringArgument(x) {
     }
 
     function parseString(s) {
-        if (test(/^\+\(/, s)) return s
+        if (test(/^[a-z].*?[A-Z]/, s)) return s
         return singlequote(s.toString())
+        if (quotes) return s.toString()
+        if (test(/^\+\(/, s)) return s
+        if (s.includes(' ')) return singlequote(s)
+        if (test(/[a-z]\.[a-z]/, s)) return s
     }
 
     function parse(s) {
@@ -3164,6 +4586,7 @@ function toStringArgument(x) {
         }
 
         if (s == null) return 'null'
+        if (s == undefined) return 'undefined'
         if (s == '') return "''"
 
         if (isNumber(s)) {
@@ -3185,11 +4608,14 @@ function splitMapJoin(s, delimiter, fn) {
 
     let output = ''
     let match = ''
-    let regex = RegExp(`(.*?)(${(delimiter.source || delimiter)})`, 'gs')
-    console.log({logValue:regex})
+    let regex = RegExp(
+        `(.*?)(${delimiter.source || delimiter})`,
+        'gs'
+    )
+    console.log({ logValue: regex })
     while (exists((match = regex.exec(s)))) {
         let [a, b] = match
-        console.log([a,b])
+        console.log([a, b])
         output += fn(a)
         if (!test(rescape(b), output)) output += b
     }
@@ -3200,7 +4626,7 @@ function argsplit(s, ref, regex = '($1)(\\w+)') {
     return match ? match : [null, null]
 }
 
-function partitioned(items, ...args) {
+function partitionWithFunctions(items, ...args) {
     const store = range(args.length + 1, [])
     for (let item of items.filter(exists)) {
         for (let i = 0; i < args.length; i++) {
@@ -3236,7 +4662,7 @@ function getSingleAndDoubleAttrs(s, mode) {
             store[single] = true
         }
 
-        for (let [a,b] of doubles) {
+        for (let [a, b] of doubles) {
             store[a] = b
         }
         return store
@@ -3245,30 +4671,35 @@ function getSingleAndDoubleAttrs(s, mode) {
 }
 function getOptions(s, mode) {
     if (mode == Object) {
-        const [text, doubleAttrs] = mreplace(/(\S+?) *= *(\S+)/g, s)
-        return [text, toDictionary(doubleAttrs, null, toArgument)]
+        const [text, doubleAttrs] = mreplace(
+            /(\S+?) *= *(\S+)/g,
+            s
+        )
+        return [
+            text,
+            toDictionary(doubleAttrs, null, toArgument),
+        ]
     }
     function runner(s) {
-        
-    if (isOnlyWords(s)) {
-        return ['', reduce(split(s), (x) => [x, true])]
-    }
-    if (test(/:\w/, s)) {
-        let [a, b] = mreplace(/:(\w+)/g, '', s)
-        return [a, reduce(b, (x) => [x, true])]
+        if (isOnlyWords(s)) {
+            return ['', reduce(split(s), (x) => [x, true])]
+        }
+        if (test(/:\w/, s)) {
+            let [a, b] = mreplace(/:(\w+)/g, '', s)
+            return [a, reduce(b, (x) => [x, true])]
+        }
+
+        if (test(/=/, s)) {
+            let [a, b] = mreplace(/(\w+)=(\w+)/g, '', s)
+            const p = [a, reduce(b, (k, v) => [k, v])]
+            return p
+        } else {
+            let [a, b] = mreplace(/[;@](\w+)/g, '', s)
+            return [a, reduce(b, (x) => [x, true])]
+        }
     }
 
-    if (test(/=/, s)) {
-        let [a, b] = mreplace(/(\w+)=(\w+)/g, '', s)
-        const p = [a, reduce(b, (k, v) => [k, v])]
-        return p
-    } else {
-        let [a, b] = mreplace(/[;@](\w+)/g, '', s)
-        return [a, reduce(b, (x) => [x, true])]
-    }
-    }
-    
-    let [a,b] = runner(s)
+    let [a, b] = runner(s)
     if (exists(b)) {
         b = mapObject(b, dict)
     }
@@ -3277,8 +4708,7 @@ function getOptions(s, mode) {
 
 function aggregate(s, regex, kt, vt) {
     const storage = new Storage()
-    const matches = isString(s) ? 
-        findall(regex, s) : s
+    const matches = isString(s) ? findall(regex, s) : s
 
     for (let [a, b] of matches) {
         if (kt) a = kt(a)
@@ -3292,9 +4722,13 @@ function pipe(...a) {
     if (isArray(a[0])) a = a[0]
     if (isFunction(a)) return a
     return (...args) =>
-        a.filter((x) => x).reduce((y, f) => (isArray(y) ? f(...y) : f(y)), args)
+        a
+            .filter((x) => x)
+            .reduce(
+                (y, f) => (isArray(y) ? f(...y) : f(y)),
+                args
+            )
 }
-
 
 function createError() {
     try {
@@ -3303,7 +4737,6 @@ function createError() {
         return e
     }
 }
-
 
 function replaceFromIndex(s, index, original, replacement) {
     let length = isNumber(original) ? original : original.length
@@ -3352,10 +4785,6 @@ class Table extends Matrix {
     }
 }
 
-function evaluate(s) {
-    //dep
-    return eval(parens(s.toString()))
-}
 
 function regexgetter(template, dict) {
     assert(template.startsWith('/'))
@@ -3386,6 +4815,7 @@ function regexStartsWithSpaces(r) {
     return /^\^?    /.test(r.source ? r.source : r)
 }
 function inferlang(s) {
+    if (!s) return 'js'
     let match = getExtension(s)
     if (match) {
         if (match == 'vimrc') return 'vim'
@@ -3405,7 +4835,8 @@ function inferlang(s) {
     }
 
     match = s.match(regexgetter('/^($1)/me', dict))
-    if (!match) match = s.match(regexgetter('/^ *($1)/me', dict))
+    if (!match)
+        match = s.match(regexgetter('/^ *($1)/me', dict))
     return dict[match[0]]
 }
 
@@ -3414,11 +4845,13 @@ function isAllCaps(s) {
 }
 
 function abbreviate(s, mode) {
+    if (s.length <= 3 || s == s.toLowerCase()) 
+        return s.toLowerCase()
     const regex = /[ \._-]|(\d+|[A-Z]+[a-z]*)/
     const letters = split(s, regex).map((x) => x[0])
-    return mode == Array ? letters : letters 
-        .join('')
-        .toLowerCase()
+    return mode == Array
+        ? letters
+        : letters.join('').toLowerCase()
 }
 function toabrev(s) {
     let regex
@@ -3453,17 +4886,18 @@ class TextTokenizer {
 }
 
 function getFunctionNames(s) {
-    return unique(findall(
-        '^(?:var|const|class|(?:async )?function(?:\\*|!)?) (\\w+)',
-        s,
-        'gm'
-    ))
+    return unique(
+        findall(
+            '^(?:var|const|class|(?:async )?function(?:\\*|!)?) (\\w+)',
+            s,
+            'gm'
+        )
+    )
 }
 
 function removeSpaces(s) {
     return s.replace(/ /g, '')
 }
-
 
 function identity(...args) {
     return args.length == 1 ? args[0] : args
@@ -3512,7 +4946,9 @@ function spaceToCamel(s) {
                 cap = false
             }
 
-            return item.length == 1 || i == 0 || arr[i - 1].endsWith('.')
+            return item.length == 1 ||
+                i == 0 ||
+                arr[i - 1].endsWith('.')
                 ? item
                 : capitalize(item)
         })
@@ -3541,7 +4977,10 @@ function createConfig(s) {
     }
     s = s.trim()
     let regex
-    if (test(/  /, s)) {
+    if (test(/^\w+ \w+$/, s)) {
+        regex = /(\w+) (\w+)/g
+    }
+    else if (test(/  /, s)) {
         //regex = /(.*?)  (.*?)(?=$|  )/g
         regex = /(\S.*?) (\S.*?)(?=  |$)/g
     } else {
@@ -3549,14 +4988,32 @@ function createConfig(s) {
     }
     //console.log(regex)
     return reduce(findall(regex, s), (k, v) => {
-        return [
-            k.trim(),
-            v ? toArgument(v) : true,
-        ]
+        return [k.trim(), v ? toArgument(v) : true]
     })
 }
 
-function jspy(lang, key) {
+function jspy(lang, key, ...args) {
+    function commentCSS(s) {
+        if (hasNewline(s)) {
+            return '/*\n' + (s) + '\n*/'
+        }
+        return `/* ${s} */`
+    }
+
+    function commentJS(s) {
+        if (hasNewline(s)) {
+            return '/*' + newlineIndent(s) + '*/'
+        }
+        return '// ' + s
+    }
+
+    function commentPY(s) {
+        if (hasNewline(s)) {
+            return '"""' + newlineIndent(s) + '"""'
+        }
+        return '# ' + s
+    }
+
     const indexes = ['js', 'py', 'vim', 'bash', 'css', 'html']
     const ref = {
         compiler: ['node', 'python3', 'bash'],
@@ -3564,6 +5021,12 @@ function jspy(lang, key) {
         const: ['const ', '', 'let'],
         name: [spaceToCamel, spaceToSnake],
         params: [spaceToCamel, spaceToSnake],
+        comment: [commentJS, commentPY, 
+        (x) => `" ${x}`,
+        (x) => `# ${x}`,
+        commentCSS,
+        (x) => `<!-- ${x} -->`,
+        ],
         //'variablefn': [variablejs, variablepy]
     }
 
@@ -3572,7 +5035,9 @@ function jspy(lang, key) {
         return reduce(ref, (k, v) => [k, v[index]])
     }
     const value = ref[key][indexes.indexOf(lang)]
-    return value
+    return isFunction(value) && exists(args)
+        ? value(...args)
+        : value
 }
 function curryStart(...kwargs) {
     const fn = kwargs.pop()
@@ -3599,15 +5064,12 @@ function curryEnd(...kwargs) {
     }
 }
 
-function timestamp() {
-    let [h, m, s, ms] = getHMSM()
+function timestamp(date) {
+    let [h, m, s, ms, ampm] = getHMSM(date)
     //h = zeroPad(h)
     m = zeroPad(m)
     s = zeroPad(s)
-    return `${h}:${m}:${s}:${ms}`
-    s = new Date()
-    s = s.toLocaleTimeString()
-    return s
+    return `${h}:${m}:${s}${ampm} ms: ${ms}`
 }
 //console.log(timestamp())
 
@@ -3616,6 +5078,9 @@ function wordCount(s) {
 }
 
 function exporter(state, key, ...args) {
+    if (isClassObject(state)) {
+        return state[key] && state[key].bind(state)
+    }
     state = new state(...args)
     return state[key].bind(state)
 }
@@ -3625,19 +5090,28 @@ function stateTrace(state, fnKey) {
 }
 class CodeLibrary {
     constructor(s) {
-        //stateTrace(this, 'find')
         const functions = getfunctions(s.toString())
         this.store = mapfilter(functions, getFunctionInfo)
     }
-    static create(s) {
-        return new CodeLibrary(s)
+    get lib() {
+        if (!this._lib) {
+            this._lib = reduce(this.store, (x) => {
+                return [x.name, x.body]
+            })
+        }
+        return this._lib
     }
-    getLibrary() {
-        return reduce(this.store, (x) => [x.name, x.body])
-    }
-    get(name) {
-        const item = this.find(name)
-        return item.body
+
+    get(key) {
+        if (isNumber(key)) {
+            const value = this.store[key - 1]
+            return value || {}
+        }
+        if (isArray(key)) {
+            return key.map((x) => this.lib[x]).filter(exists)
+        }
+        const item = this.find(key)
+        return item
     }
     find(name) {
         let item = this.store.find((x) => x.name == name)
@@ -3669,18 +5143,20 @@ function mapfilter(items, fn, filter) {
     return store
 }
 
-
-function foo(a, vb, {ff} = {
-    
-    }) {
-    
+function countParameters(v) {
+    if (getFirstLine(v.toString()).includes('...')) {
+        return 100
+    }
+    return getParameters(v).length
 }
 function getParameters(s) {
     let r1 = /^function \w+ *\((.*?(?:} = {[^]+?)?)\) {/
-    let r2 = /^function \w+ *\((.*?(?:} = {[^]+?)?)\) {/
-    let m = itersearch(s, r1, r2)
+    let r2 = /^\w+ *\((.*?(?:} = {[^]+?)?)\) {/
+    let r3 = /^.*?=>/
+    let m = itersearch(s.toString(), r1, r2, r3)
+    //console.log(m)
     if (!m) return []
-    return findall(/(?:\.\.\.)?(\w+)(?:,|$)/g, m)
+    return findall(/(?:\.\.\.)?(\w+)(?:,|$| *=>|\))/g, m)
 }
 
 async function foo() {
@@ -3709,28 +5185,43 @@ function timegetter(message) {
     console.log(timestamp(), message || '')
     return time
 }
-function getErrorInfo(e, getStack) {
-    if (isString(e) || e.stack.length < 10) {
+function getErrorInfo(e, options = {}) {
+    if (isString(e)) {
+        return console.log({ myError: e })
+    }
+
+    let s = e.stack
+    let match = search(/<anonymous>:(\d+):(\d+)/, s)
+    if (!match) {
         return 
     }
-    let s = e.stack
-    let [name, message] = search(/(\w+): *(.*)/, s)
+    match = match.map(Number)
+    if (options.offset) {
+        match = match.map((x, i) => x - options.offset[i])
+    }
 
-    let regex = /^ *at (\S+) \((.*?):(\d+):(\d+)/gm
-    let stack = findall(regex, s).map(([caller, file, line, ch], i) => {
-        line = Number(line)
-        ch = Number(ch)
-        if (caller.includes('.')) {
-            let [className, method] = caller.split('.')
-            return { class: className, method, file, line: Number(), ch }
-        }
-        return { caller, file, line, ch }
-    })
-    return getStack ? {
+    let [name, message] = search(/(\w+): *(.*)/, s)
+    let value
+    let proposedFixFn
+    let template
+    if (name == 'ReferenceError') {
+        value = search(/[\w.]+/, message)
+    }
+
+    if (name == 'SyntaxError') {
+        value = search(/[\w.]+/, message)
+        //template = `let ${value} = ''\n$1`
+        //proposedFixFn = templateToFunction(template)
+        //console.log(proposedFixFn.toString(), 'fixfn')
+    }
+    return {
+        line: match[0],
+        ch: match[1],
         name,
         message,
-        stack,
-    } : {name, message, stack: stack[0]}
+        value,
+        proposedFixFn,
+    }
 }
 
 
@@ -3739,15 +5230,23 @@ function getDetailedErrorInfo(e) {
     let [name, message] = search(/(\w+): *(.*)/, s)
 
     let regex = /^ *at (\S+) \((.*?):(\d+):(\d+)/gm
-    let stack = findall(regex, s).map(([caller, file, line, ch], i) => {
-        line = Number(line)
-        ch = Number(ch)
-        if (caller.includes('.')) {
-            let [className, method] = caller.split('.')
-            return { class: className, method, file, line: Number(), ch }
+    let stack = findall(regex, s).map(
+        ([caller, file, line, ch], i) => {
+            line = Number(line)
+            ch = Number(ch)
+            if (caller.includes('.')) {
+                let [className, method] = caller.split('.')
+                return {
+                    class: className,
+                    method,
+                    file,
+                    line: Number(),
+                    ch,
+                }
+            }
+            return { caller, file, line, ch }
         }
-        return { caller, file, line, ch }
-    })
+    )
     return {
         name,
         message,
@@ -3857,9 +5356,26 @@ function trywrap(fn, handler) {
         }
     }
 }
+function stringIIFEWrap(s) {
+    const value = parens(brackify('() =>', s)) + '()'
+    //console.log(value)
+    //console.log(value); throw ''
+    return value
+}
+function stringTryWrap(s) {
+    //const fix = `console.log(getErrorInfo(e, {offset: [2,5]}))`
+    //return brackify('try', s) + ' ' + brackify('catch(e)', fix)
+
+    const fix = `return getErrorInfo(e, {offset: [3, 9]})`
+    return stringIIFEWrap(
+        brackify('try', s) + ' ' + brackify('catch(e)', fix)
+    )
+}
 
 function getLoggableProperties(x) {
-    let value = isClass(x) ? getClassProperties(x) : stringify(x)
+    let value = isClass(x)
+        ? getClassProperties(x)
+        : stringify(x)
     return value
 }
 
@@ -3884,9 +5400,9 @@ function veval(s) {
 }
 
 //function toNumber(s) {
-    //if (isNumber(s)) {
-        //return Number(s)
-    //}
+//if (isNumber(s)) {
+//return Number(s)
+//}
 //}
 
 function removeStrings(s) {
@@ -3895,26 +5411,6 @@ function removeStrings(s) {
 
 function addf(s) {
     return (x) => x + s
-}
-
-function toModuleImports(path, items) {
-    return `${brackify(
-        'var',
-        toArray(items).map(addf(','))
-    )} = require("${fixFilePath(path)}")`
-}
-function fixFilePath(s) {
-    s = addExtension(s, 'js')
-    if (test(/^[\/.]/, s)) {
-        return s
-    }
-    return './' + s
-}
-
-function toModuleExports(items) {
-    const moduleExports =
-        '\n' + join(toArray(items).map((x) => `module.exports.${x} = ${x}`))
-    return moduleExports
 }
 
 function lineCount(s) {
@@ -3926,12 +5422,10 @@ function saybye() {
 }
 
 function sayhi(...args) {
-
     if (args) {
         console.log('hi from args', ...args)
         return args[0] + 'hi'
-    }
-    else {
+    } else {
         console.log('hiya hiya')
         return 'sayinghi'
     }
@@ -3940,8 +5434,7 @@ function sayhi(...args) {
 function captureRegex(regex, flags) {
     if (isString(regex)) {
         return RegExp(parens(regex, flags))
-    }
-    else {
+    } else {
         return RegExp(parens(regex.source), regex.flags)
     }
 }
@@ -3951,16 +5444,15 @@ function splitLast(s, regex, flags) {
     let a = items[0]
     let b = ''
     //console.log(items)
-    for (let i = 1; i < items.length - 1; i+=2) {
+    for (let i = 1; i < items.length - 1; i += 2) {
         let item = items[i]
         let next = items[i + 1]
-        
+
         if (i == items.length - 2) {
             b += item
             b += next
             return [a, b]
-        }
-        else {
+        } else {
             a += item
             a += next
         }
@@ -3975,27 +5467,44 @@ function replaceLast(regex, replacement, s) {
     }
     let index = lastMatch.index
     let length = lastMatch[0].length
-    return s.slice(0, index) + replacement + s.slice(index + length)
+    return (
+        s.slice(0, index) +
+        replacement +
+        s.slice(index + length)
+    )
 }
-function bringToLifeLambda(s) {
-    // the scope is prehibitrd to this.indexifle
-    //uncapitalize(x.slice(2)) + ': ' + x
-    if (!test(/^function|^\(/, s)) {
-        s = '(x) => ' + s
-    }
-    s = parens(s)
-    return eval(s)
-}
-function bringToLife(s, context) {
-    function prepare(s) {
-        s = removeComments(s)
-        s = removeQuotes(s)
-        s = parens(s)
-        return s
+function bringFunctionToLife(s) {
+    let [text, isAsync] = mreplace(/^async /, s)
+    if (isStringObjectFunction(text)) {
+        text = 'function ' + text
     }
 
-    s = prepare(s)
-    return context ? scopedEval(s, context) : eval(s)
+    //if (isStringLambdaFunction(text)) {
+        //text = text.replace(
+            ///(.*?) *=> *({?)/,
+            //(_, x, bracket) => {
+                //let payload = x.startsWith('(') ? x : parens(x)
+                //if (bracket) {
+                    //payload += '{'
+                //}
+                //return 'function lambda' + k + payload
+            //}
+        //)
+    //}
+
+    if (isAsync) text = 'async ' + text
+    const fnString = parens(text)
+    const fn = eval(fnString)
+    return fn
+}
+
+function bringToLife(s, context) {
+    if (!isString(s)) return s
+    if (context) return scopedEval(s, context)
+    if (isStringFunction(s)) {
+        return bringFunctionToLife(s)
+    }
+    return toArgument(s)
 }
 
 function addDeepKey(ref, key, value) {
@@ -4044,19 +5553,19 @@ function isStandardHtml(s) {
         'li',
     ]
     return natives.includes(s)
-
 }
 function isCssSymbol(s) {
     return test(/^[:#.*]/, s)
 }
 function fixSelector(s) {
     if (isCssSymbol(s)) return s
-    if (isStandardHtml(s)) return s 
+    if (isStandardHtml(s)) return s
     return '.' + s
 }
 
 function fixUrl(s) {
-    if (!s.startsWith('http')) s = 'https://' + s
+    s = s.replace(/view-source:/, '')
+    if (!test('^http?://', s)) s = 'https://' + s
     if (!s.includes('.')) s += '.com'
     return s
 }
@@ -4251,7 +5760,9 @@ function depluralize(word, amount) {
 }
 
 function findallStrings(s) {
-    return findall(/\'.*?\'|\".*?\"/g, s).map((x) => x.slice(1, -1))
+    return findall(/\'.*?\'|\".*?\"/g, s).map((x) =>
+        x.slice(1, -1)
+    )
 }
 
 function isStandardCss(s) {
@@ -4265,24 +5776,51 @@ function reduceToString(iterable, fn, mode = 'entries') {
         fn = (k, v) => v
     }
     iterable = prepareIterable(iterable, mode)
-    const runner = isDoubleIterable(iterable) ? (x, i) => fn(...x, i) : fn
+    const runner = isDoubleIterable(iterable)
+        ? (x, i) => fn(...x, i)
+        : fn
     return join(iterable.map(runner).filter(exists))
 }
 
 function join(arr) {
+    if (!exists(arr)) {
+        return ''
+    }
     if (arguments.length > 1) {
         arr = Array.from(arguments).filter(exists).map(String)
-    }
-
-    else if (isString(arr)) {
+    } else if (isString(arr)) {
         return arr
+    } else if (isObject(arr)) {
+        arr = Object.values(arr)
+    } else {
+        arr = Array.from(arr)
     }
 
-    else if (isObject(arr)) {
+    let s = ''
+    for (let i = 0; i < arr.length; i++) {
+        let item = arr[i]
+        if (item == '') continue
+        s += item
+        if (i < arr.length) {
+            let next = arr[i + 1] || ''
+            s += item.includes('\n') || next.includes('\n') ? '\n\n' : '\n'
+        }
+    }
+    return s
+}
+
+
+function joinold(arr) {
+    if (!exists(arr)) {
+        return ''
+    }
+    if (arguments.length > 1) {
+        arr = Array.from(arguments).filter(exists).map(String)
+    } else if (isString(arr)) {
+        return arr
+    } else if (isObject(arr)) {
         arr = Object.values(arr)
-    } 
-    
-    else {
+    } else {
         arr = Array.from(arr)
     }
 
@@ -4295,6 +5833,8 @@ function join(arr) {
 }
 
 function wrap(s, delimiter = '\n') {
+    if (delimiter == '[]') return `[${s}]`
+    if (delimiter == '{}') return `{${s}}`
     return delimiter + s + delimiter
 }
 
@@ -4367,6 +5907,14 @@ function compose(...fns) {
     return (x) => fns.reduceRight((acc, f) => f(acc), x)
 }
 
+function coerceToArray(x) {
+    if (x == null) return []
+    if (isString(x)) {
+        return split(x)
+    }
+    return [x]
+}
+
 function coerceToString(x) {
     return x.toString()
 }
@@ -4392,7 +5940,12 @@ function splitOptionalComma(s) {
 }
 
 function brackify(name, value) {
-    return (name ? name + ' ' : '') + '{' + newlineIndent(value) + '}'
+    return (
+        (name ? name + ' ' : '') +
+        '{' +
+        newlineIndent(value) +
+        '}'
+    )
 }
 
 function hasColon(s) {
@@ -4423,11 +5976,11 @@ function removeStartingSpaces(s) {
 
 function toFunctionRegex(s, flags = 'm') {
     const ignore = ['run']
-    if (s.length <= 3 && !ignore.includes(s)) {
+    if (s.length <= 2 && !ignore.includes(s)) {
         s = toAbbreviationRegex(s)
     }
     return RegExp(
-        '^(?:(?:async )?function|class|const|var|let) ' +
+        '^(?:(?:async )?function|class|const|var) ' +
             s +
             '\\b[\\w\\W]*?\\n}',
         flags
@@ -4446,6 +5999,11 @@ function getSpacesFromOffset(offset, original) {
     return (spaces && spaces.length) || 0
 }
 
+function countParentheses(s) {
+    return count(/[()]/, s)
+    //return (s.match(/(?:[^\\]|^)\((?![\?])/g) || []).length
+}
+
 function countCaptureGroups(regex) {
     //util
     let s = regex.source || regex
@@ -4457,6 +6015,18 @@ function getLastLine(s) {
 }
 function splitThePage(s, key) {
     return s.split(RegExp(wrap(key || '---+'))).map(trimmed)
+}
+
+function iterSearch(s, regexes, mode = 'match') {
+    for (let regex of regexes) {
+        let value =
+            mode == 'search' ? search(regex, s) : s.match(regex)
+
+        if (value) {
+            return value
+        }
+    }
+    return null
 }
 
 function itersearch(s, ...regexes) {
@@ -4471,175 +6041,8 @@ function itersearch(s, ...regexes) {
     return null
 }
 
-module.exports.test = test
-module.exports.exists = exists
-module.exports.isPrimitive = isPrimitive
-module.exports.difference = difference
-module.exports.unique = unique
-module.exports.findall = findall
-module.exports.getFunctionName = getFunctionName
-module.exports.getFunctionNames = getFunctionNames
-module.exports.insertText = insertText
-module.exports.isArray = isArray
-module.exports.isObject = isObject
-module.exports.toArray = toArray
-module.exports.removeComments = removeComments
-module.exports.reduce = reduce
-module.exports.isString = isString
-module.exports.joined = joined
-module.exports.prepareIterable = prepareIterable
-module.exports.dedent = dedent
-module.exports.toDictionary = toDictionary
-module.exports.newlineIndent = newlineIndent
-module.exports.trimmed = trimmed
-module.exports.splitonce = splitonce
-module.exports.search = search
-module.exports.ncg = ncg
-module.exports.isNestedArray = isNestedArray
-module.exports.isNumber = isNumber
-module.exports.roygbiv = roygbiv
-module.exports.parens = parens
-module.exports.hasNumber = hasNumber
-module.exports.toCamelCase = toCamelCase
-module.exports.split = split
-module.exports.parseJSON = parseJSON
-module.exports.stringcall = stringcall
-module.exports.doublequote = doublequote
-module.exports.toStringArgument = toStringArgument
-module.exports.aggregate = aggregate
-module.exports.splitmapfilter = splitmapfilter
-module.exports.getOptions = getOptions
-module.exports.argsplit = argsplit
-module.exports.Storage = Storage
-module.exports.sorted = sorted
-module.exports.len = len
-module.exports.isInteger = isInteger
-module.exports.sum = sum
-module.exports.replace = replace
-module.exports.templater = templater
-module.exports.Matrix = Matrix
-module.exports.noop = noop
-module.exports.isNewLine = isNewLine
-module.exports.getLongest = getLongest
-module.exports.isFunction = isFunction
-module.exports.n2char = n2char
-module.exports.trimSpaces = trimSpaces
-module.exports.getLast = getLast
-module.exports.dreplace = dreplace
-module.exports.flat = flat
-module.exports.capitalize = capitalize
-module.exports.paired = paired
-module.exports.ftest = ftest
-module.exports.find = find
-module.exports.getIndent = getIndent
-module.exports.matchgetter = matchgetter
-module.exports.matchall = matchall
-module.exports.depluralize = depluralize
-module.exports.singlequote = singlequote
-module.exports.freplace = freplace
-module.exports.replaceFromIndex = replaceFromIndex
-module.exports.addGFlag = addGFlag
-module.exports.tryval = tryval
-module.exports.indent = indent
-module.exports.toSpaces = toSpaces
-module.exports.evaluate = evaluate
-module.exports.isRegExp = isRegExp
-module.exports.Eater = Eater
-module.exports.cartesianProduct = cartesianProduct
-module.exports.zip = zip
-module.exports.toArgument = toArgument
-module.exports.regexgetter = regexgetter
-module.exports.hasGFlag = hasGFlag
-module.exports.regexStartsWithSpaces = regexStartsWithSpaces
-module.exports.inferlang = inferlang
-module.exports.toabrev = toabrev
-module.exports.mreplace = mreplace
-module.exports.linegetter = linegetter
-module.exports.assert = assert
-module.exports.removeAllComments = removeAllComments
-module.exports.stringify = stringify
-module.exports.Cache = Cache
-module.exports.toVariable = toVariable
-module.exports.datestamp = datestamp
-module.exports.timestamp = timestamp
-module.exports.jspy = jspy
-module.exports.spaceToCamel = spaceToCamel
-module.exports.curryStart = curryStart
-module.exports.curryEnd = curryEnd
-module.exports.isUrl = isUrl
-module.exports.filtered = filtered
-module.exports.Clock = Clock
-module.exports.removeStrings = removeStrings
-module.exports.toModuleImports = toModuleImports
-module.exports.type = type
-module.exports.toModuleExports = toModuleExports
-module.exports.getIndentAndLine = getIndentAndLine
-module.exports.isDefined = isDefined
-module.exports.isWord = isWord
-module.exports.toSnakeCase = toSnakeCase
-module.exports.toAttr = toAttr
-module.exports.toDashCase = toDashCase
-module.exports.quotify = quotify
-module.exports.fixUrl = fixUrl
-module.exports.fixSelector = fixSelector
-module.exports.getWords = getWords
-module.exports.CodeLibrary = CodeLibrary
-module.exports.toStringDictionaryEntry = toStringDictionaryEntry
-module.exports.insertBelow = insertBelow
-module.exports.fparse = fparse
-module.exports.toStringCallable = toStringCallable
-module.exports.getChunks = getChunks
-module.exports.range = range
-module.exports.getFirstWord = getFirstWord
-module.exports.pluralize = pluralize
-module.exports.rescape = rescape
-module.exports.findallStrings = findallStrings
-module.exports.compose = compose
-module.exports.reduceToString = reduceToString
-module.exports.isStandardCss = isStandardCss
-module.exports.startsWithPeriod = startsWithPeriod
-module.exports.splitOptionalComma = splitOptionalComma
-module.exports.brackify = brackify
-module.exports.hasColon = hasColon
-module.exports.hasDash = hasDash
-module.exports.getSpaces = getSpaces
-module.exports.getFunctionInfo = getFunctionInfo
-module.exports.getLastLine = getLastLine
-module.exports.countCaptureGroups = countCaptureGroups
-module.exports.getSpacesFromOffset = getSpacesFromOffset
-module.exports.toFunctionRegex = toFunctionRegex
-module.exports.removeStartingSpaces = removeStartingSpaces
-module.exports.getFirstLine = getFirstLine
-module.exports.join = join
-module.exports.splitThePage = splitThePage
-module.exports.bringToLife = bringToLife
-module.exports.tail = tail
-module.exports.addf = addf
-module.exports.comment = comment
-module.exports.paired = paired
-module.exports.split = split
-module.exports.exists = exists
-module.exports.splitThePage = splitThePage
-module.exports.bringToLife = bringToLife
-module.exports.matchall = matchall
-module.exports.getChunks = getChunks
-module.exports.sayhi = sayhi
-module.exports.Storage = Storage
-module.exports.prepareRegex = prepareRegex
-module.exports.prepareRegex = prepareRegex
-module.exports.toSpaces = toSpaces
-module.exports.comment = comment
-module.exports.getFunctionNames = getFunctionNames
-module.exports.toModuleExports = toModuleExports
-module.exports.getLongest = getLongest
-module.exports.CodeLibrary = CodeLibrary
 //console.log(getLongest([{a:1}, {a:3}], (x) => x.a, Object))
 //console.log(lineCount('hi'))
-module.exports.lineCount = lineCount
-module.exports.exists = exists
-module.exports.iter = iter
-module.exports.iter = iter
-
 function findError(s) {
     const chunks = getChunks(s)
     const store = []
@@ -4706,7 +6109,12 @@ function lbreplace(regex, replacement, s, flags) {
         let x = args[0]
         //console.log(lbRegex); throw ''
         //console.log(x); throw ''
-        let [text, lb] = mreplace(lbRegex, '', x, flags.replace('g', ''))
+        let [text, lb] = mreplace(
+            lbRegex,
+            '',
+            x,
+            flags.replace('g', '')
+        )
         //console.log([text, lb]); throw ''
         return lb + replacement(text, ...args.slice(1))
     }
@@ -4723,7 +6131,6 @@ function toRequireString(s) {
     return `const ${removeExtension(s)} = require('${s}')`
 }
 
-
 function removeFunctionPrefix(s) {
     return s.replace(/function /, '')
 }
@@ -4731,20 +6138,12 @@ function removeExtension(s) {
     return s.replace(/\.\w+$/, '')
 }
 
-module.exports.coerceToNumber = coerceToNumber
-
-function getStackTrace(e) {
-    if (!e) e = createError()
-    const s = isString(e) ? e : e.stack
-    //console.log(s)
-    const r = /at (?:new |Object\.)?([<>a-zA-Z0-9\.]+) .*?(\d+):\d+\)/g
-    return findall(r, s)
-}
-
 function getStackInfo(e) {
     // DONT WRITE CONSOLE.LOG
     const stack = getStackTrace(e)
     //original(stack)
+    //throw ''
+    const ignore = ['reduce', 'filter']
     for (let i = stack.length - 1; i >= 0; i--) {
         let name = stack[i][0]
         //original(name)
@@ -4753,6 +6152,10 @@ function getStackInfo(e) {
             case 'lambdaDisplay':
             case 'proxyAssertion':
             case 'Console.display':
+            case 'console.display':
+                if (ignore.includes(stack[i + 1][0])) {
+                    return stack[i + 2]
+                }
                 return stack[i + 1]
 
             case '<anonymous>':
@@ -4762,16 +6165,15 @@ function getStackInfo(e) {
     }
     return stack[0]
 }
+function getStackTrace(e) {
+    if (!e) e = createError()
+    const s = isString(e) ? e : e.stack
+    //console.log(s)
+    const r =
+        /at (?:new |Object\.)?([<>a-zA-Z0-9\.]+) .*?(\d+):\d+\)/g
+    return findall(r, s)
+}
 //rename sreplace ereplace
-module.exports.modularIncrement = modularIncrement
-module.exports.blockComment = blockComment
-//rn partitioned partition
-module.exports.modularIncrementNumber = modularIncrementNumber
-module.exports.getLastWord = getLastWord
-module.exports.join = join
-module.exports.linegetter = linegetter
-module.exports.depluralize = depluralize
-
 function htmlify(s) {
     if (hasHtml(s)) return s
     s = removeComments(s)
@@ -4781,11 +6183,14 @@ function htmlify(s) {
             const [a, b] = splitonce(s)
             const items = b ? split(b, ',') : split(a, ',')
             const className = b ? a : 'list'
-            const childClassName = depluralize(className) + '-' + 'child'
+            const childClassName =
+                depluralize(className) + '-' + 'child'
             return divify(
                 'ul',
                 className,
-                items.map((x) => divify('li', childClassName, x))
+                items.map((x) =>
+                    divify('li', childClassName, x)
+                )
             )
         },
     }
@@ -4861,8 +6266,7 @@ class IndexedMap {
             if (key) {
                 index = this.keys.indexOf(key)
                 console.log('found it', index)
-            }
-            else {
+            } else {
                 return [null, null]
             }
         }
@@ -4871,12 +6275,8 @@ class IndexedMap {
             this.key = this.keys[this.index]
             this.value = this.values[this.index]
             return [this.key, this.value]
-        }
-        else {
-            return [
-                this.keys[index],
-                this.values[index]
-            ]
+        } else {
+            return [this.keys[index], this.values[index]]
         }
     }
 }
@@ -4885,15 +6285,22 @@ function isSingleCssProperty(s) {
     return test(/^.*?{\n.+\n}/, s)
 }
 
-
 function smartDedent(s) {
     s = replace(/^\n*|\n$/g, '', s, 'g')
     const spaces = search(/^ *(?=\S)/m, s)
     const secondLineSpaces = search(/\n *(?=\S)/, s)
-    if (!spaces  && secondLineSpaces && secondLineSpaces.length > 4) {
-        return replace('^' + secondLineSpaces.slice(5), '', s, 'gm').trim()
-    }
-    else {
+    if (
+        !spaces &&
+        secondLineSpaces &&
+        secondLineSpaces.length > 4
+    ) {
+        return replace(
+            '^' + secondLineSpaces.slice(5),
+            '',
+            s,
+            'gm'
+        ).trim()
+    } else {
         s = replace('^' + spaces, '', s, 'gm')
         s = removeComments(s)
         return s.trim()
@@ -5048,7 +6455,9 @@ class LineEdit {
     }
 
     getRange(from, to) {
-        return this.lines.slice(from, to || this.lines.length).join('\n')
+        return this.lines
+            .slice(from, to || this.lines.length)
+            .join('\n')
     }
 
     constructor(parser, ...parsers) {
@@ -5068,7 +6477,9 @@ class LineEdit {
         this.lines = (this.s || s).trim().split('\n')
 
         for (let i = 0; i < this.lines.length; i++) {
-            const [indentation, line] = getIndentAndLine(this.lines[i])
+            const [indentation, line] = getIndentAndLine(
+                this.lines[i]
+            )
             this.spaces = indentation
             this.index = i
             //for (let parser of this.parsers) {
@@ -5084,12 +6495,16 @@ class LineEdit {
 
     insert(index, value) {
         let [spaces, line] = getSpacesAndLine(this.get(index))
-        const payload = spaces + (isFunction(value) ? value(line) : value)
+        const payload =
+            spaces + (isFunction(value) ? value(line) : value)
         insert(this.lines, payload, index)
     }
 
     set(value, spaces) {
-        const payload = indent(value, spaces == null ? this.spaces : spaces)
+        const payload = indent(
+            value,
+            spaces == null ? this.spaces : spaces
+        )
         if (isArray(payload)) {
             this.store.push(...payload)
         } else {
@@ -5098,16 +6513,10 @@ class LineEdit {
     }
 }
 
-module.exports.getChunks = getChunks
-module.exports.smartDedent = smartDedent
-module.exports.hasHtml = hasHtml
-module.exports.Iter = Iter
-module.exports.LineEdit = LineEdit
 function isEnterBlock(s) {
     return /[:{(\[] *$/.test(s)
 }
 
-module.exports.isEnterBlock = isEnterBlock
 function fixSpaceLength(n) {
     switch (n) {
         case 1:
@@ -5134,11 +6543,6 @@ function fixSpaceLength(n) {
     return n
 }
 
-module.exports.fixSpaceLength = fixSpaceLength
-
-module.exports.isArray = isArray
-module.exports.newlineIndent = newlineIndent
-
 function isHtml(s) {
     if (test(/<\w/, s)) {
         return true
@@ -5151,20 +6555,9 @@ function isHtmlAttr(s) {
     }
 }
 
-module.exports.ncg = ncg
-module.exports.replace = replace
-module.exports.isString = isString
-module.exports.join = join
-module.exports.linegetter = linegetter
-module.exports.doublequote = doublequote
-module.exports.isObject = isObject
-module.exports.hasNewline = hasNewline
-
 //rest='foo for=mrdd'
 //;[rest, doubleAttrs] = mreplace(/(\S+?) *= *(\S+)/g, rest)
 //console.log([rest, doubleAttrs])
-module.exports.puppetStringify = puppetStringify
-
 class EventEmitter {
     constructor() {
         this.events = {}
@@ -5174,7 +6567,7 @@ class EventEmitter {
             for (let [k, v] of Object.entries(e)) {
                 this.on(k, v)
             }
-            return 
+            return
         }
 
         if (typeof this.events[e] !== 'object') {
@@ -5206,8 +6599,6 @@ class EventEmitter {
     }
 }
 
-
-
 //console.log(typist('<c-a-s->hizhGG<CR><3><4>44<l><r><u><d>  '))
 function testf(regex, flags = '') {
     return (s) => test(regex, s, flags)
@@ -5232,11 +6623,9 @@ const vmap = {
     for: 'v-for',
     fori: 'v-for',
     vfor: 'v-for',
-    s: 'style',
+    html: 'v-html',
     model: 'v-model',
 }
-module.exports.vmap = vmap
-
 //z=new IndexedMap()
 //z.set('h', 'f')
 //z.set('h', 'fg')
@@ -5254,8 +6643,6 @@ module.exports.vmap = vmap
 //z()
 //
 
-
-
 function atFirst(fn, ...args) {
     return (x) => [fn(x[0], ...args), x[1]]
 }
@@ -5264,8 +6651,9 @@ function atSecond(fn, ...args) {
     return (x) => [x[0], fn(x[1], ...args)]
 }
 
-
-
+function log(s) {
+    return `console.log(${s})`
+}
 function logger(x) {
     //dumb
     if (isClassObject(x)) {
@@ -5326,12 +6714,9 @@ class IncrementalBuilder {
 //
 //
 
-
-
 function getUniqueLetters(s) {
     return unique(findall(/\w/g, s))
 }
-
 
 function isAllEqual(x) {
     return x.every((item) => item == item[0])
@@ -5364,15 +6749,11 @@ class Builder {
         return join(lines)
     }
 }
-module.exports.fillTo = fillTo
-module.exports.isAllEqual = isAllEqual
-module.exports.getUniqueLetters = getUniqueLetters
-module.exports.isStandardHtml = isStandardHtml
 //
 
-
 function getVariablesFromString(s) {
-    const regex = /\w+\(|\b(?:if|else|while|for|do)\b|\/.*?\/\w*|'.*?'|".*?"/g
+    const regex =
+        /\w+\(|\b(?:if|else|while|for|do)\b|\/.*?\/\w*|'.*?'|".*?"/g
     return getWords(s.replace(regex, ''))
 }
 //console.log(getVariablesFromString('if (/foo/g, dfg, d, foo(bar) {'))
@@ -5381,29 +6762,26 @@ function toStringFunction(name, params, body) {
         params = params.join(', ')
     }
     params = params ? params : ''
-    return brackify(`function ${name.trim()}(${params})`, body.trim())
+    return brackify(
+        `function ${name.trim()}(${params})`,
+        body
+    )
 }
-
-module.exports.toStringFunction = toStringFunction
-module.exports.stringcall = stringcall
-module.exports.getVariablesFromString = getVariablesFromString
-module.exports.boundary = boundary
-module.exports.rescape = rescape
 
 function checkjs(s) {
-   s = s.replace(/^[\w\.]+\( *(?:\n[^]+?\n\)|\{ *\n[^]+?\n\}\)|.+)/gm, '')
-   //console.log(s)
-   try {
-   return true 
-       eval(s)
-   }
-   catch(e) {
-       console.log(e)
-       return false
-    
-   }
+    s = s.replace(
+        /^[\w\.]+\( *(?:\n[^]+?\n\)|\{ *\n[^]+?\n\}\)|.+)/gm,
+        ''
+    )
+    //console.log(s)
+    try {
+        return true
+        eval(s)
+    } catch (e) {
+        console.log(e)
+        return false
+    }
 }
-
 
 s = `
 foo({
@@ -5413,34 +6791,31 @@ foo({
 
 //console.log(checkjs(s))
 //console.log(checkjs('foo(dfg)'))
-module.exports.checkjs = checkjs
 
-function toAbbreviationRegex(input, splatLength = 2) {
-    
+function toAbbreviationRegex(input, splatLength = 1) {
     let letters = split(input, '')
     let s = ''
+    //let m = '\\w'
+    let m = '[a-z]'
+    //let fg = {${splatLength - 1},}
     for (let i = 0; i < letters.length; i++) {
         let letter = letters[i]
         if (i == 0) {
             s += `[${letter}${capitalize(letter)}]`
-            s += `\\w{${splatLength - 1},}`
-        }
-        else if (i == letters.length - 1) {
+            s += `${m}*`
+        } else if (i == letters.length - 1) {
             s += `(?:[-_.][${letter}${capitalize(letter)}]`
             s += `|${capitalize(letter)})`
-            s += '\\w+'
-        }
-        else {
+            s += '\\w*'
+        } else {
             s += `(?:[-_.][${letter}${capitalize(letter)}]`
             s += `|${capitalize(letter)})`
-            s += `\\w{${splatLength},}`
+            s += `${m}*`
         }
     }
-    //console.log([s])
+    //console.log([s, 'abr'])
     return s
-
 }
-
 
 function expensiveFuzzyMatch(input, choices, mode) {
     choices = prepareIterable(choices, 'keys')
@@ -5448,7 +6823,11 @@ function expensiveFuzzyMatch(input, choices, mode) {
     const FuzzyMatchTests = [
         (x) => test('^' + input, x, 'i'),
         //(x) => test('^' + toAbbreviationRegex(input) + '$', x),
-        (x) => test('^' + toAbbreviationRegex(input) + '$', removeExtension(x)),
+        (x) =>
+            test(
+                '^' + toAbbreviationRegex(input) + '$',
+                removeExtension(x)
+            ),
     ]
 
     if (choices.includes(input)) {
@@ -5460,34 +6839,48 @@ function expensiveFuzzyMatch(input, choices, mode) {
         return getLongest(results)
     }
 
-    const [a,b] = FuzzyMatchTests.map((x) => choices.filter(x))
+    const [a, b] = FuzzyMatchTests.map((x) => choices.filter(x))
     //console.log([a, b])
     /* a = startswith */
     /* b = abbreviate */
 
-    if (a.length == 0 && b.length == 0) return 
-    if (a.length != 1 && b.length == 1) { return b[0] }
-    if (b.length != 1 && a.length == 1) { return a[0] }
-    if (a.length == 1 && b.length == 1) { return b[0] }
+    if (a.length == 0 && b.length == 0) return
+    if (a.length != 1 && b.length == 1) {
+        return b[0]
+    }
+    if (b.length != 1 && a.length == 1) {
+        return a[0]
+    }
+    if (a.length == 1 && b.length == 1) {
+        return b[0]
+    }
     if (mode == Array) return recursiveFlat(a, b)
-    return getLongest(getShortest([a,b]))
+    return getLongest(getShortest([a, b]))
 }
 
 function fuzzyMatch(input, choices) {
-
-    const fuzzymatchtests = [
+    if (!choices || choices.length == 0) return 
+    const cachedRegex = toAbbreviationRegex(input)
+    const fuzzyMatchTests = [
+        (x) => test('^' + cachedRegex + '$', x),
         (x) => test('^' + input, x, 'i'),
-        (x) => test('^' + toabbreviationregex(input) + '$', x),
-        (x) => test(boundary(input), x),
+        (x) => search('^' + cachedRegex, x),
     ]
-    for (let test of FuzzyMatchTests) {
-        let r = choices.filter(test)
+
+    let count = 0
+    for (let test of fuzzyMatchTests) {
+        if (count == 2) {
+            let m = choices.map(test).filter(String)
+            return getLongest(m, len, String)
+        }
+
+        let r = choices && choices.filter(test)
         if (exists(r)) {
             return getLongest(r, len, String)
         }
+        count++
     }
 }
-
 
 function isAllSingleWords(s) {
     return test(/\w+/, s) && !test(/\w+ \w+/, s)
@@ -5497,10 +6890,7 @@ function startsWithSingleWord(s) {
     return test(/^(\w+)\n/m, s)
 }
 
-
 //console.log(split(abbreviate('to-siWoRD'), ''))
-module.exports.fuzzyMatch = fuzzyMatch
-module.exports.prepareIterable = prepareIterable
 //fuzzyMatch('ret', ['removeType', 'refat'])
 //
 
@@ -5520,10 +6910,8 @@ function count(regex, s, flags = 'g') {
     const matches = s.match(regex)
     return matches ? matches.length : 0
 }
-module.exports.count = count
 //count
 //
-
 
 ///functionwallu
 
@@ -5531,11 +6919,6 @@ module.exports.count = count
 //"/^ *"/gm
 //"/'fn': '$1'/
 //"/'\d+': '$1'/
-module.exports.count = count
-module.exports.abbreviate = abbreviate
-module.exports.dreplace = dreplace
-module.exports.reduceToString = reduceToString
-
 //regexgetter regexGetter
 //stringcall  toCallable
 //counted     count
@@ -5543,14 +6926,6 @@ module.exports.reduceToString = reduceToString
 //trimmed trim
 //toabrev abbreviate
 //console.log(stringify(aggregate(text, /(\w+) = ([a-zA-Z].+)/g)))
-module.exports.getParameters = getParameters
-module.exports.filterObject = filterObject
-module.exports.inferlang = inferlang
-module.exports.isCapitalized = isCapitalized
-module.exports.uncapitalize = uncapitalize
-
-
-
 function isLogicFunction(s) {
     return test(/^(is|start|end|has)/, s)
 }
@@ -5568,7 +6943,15 @@ function sortByOccurence(items, source, reverse = true) {
 }
 
 function toVimVariable(key, items) {
-    let value = isPrimitive(items) ? items : JSON.stringify(items)
+    if (arguments.length == 3) {
+        
+        let value = isPrimitive(arguments[2]) ?
+            doublequote(arguments[2]) : toStringArgument(arguments[2])
+        return `let g:${arguments[0]}[${arguments[1]}] = ${value}`
+    }
+    let value = isPrimitive(items)
+        ? items
+        : JSON.stringify(items)
     return `let g:${key} = ${value}`
 }
 
@@ -5578,18 +6961,11 @@ function toConfig(s) {
 
 function toVimDict(dict, key, value) {
     if (arguments.length == 4) {
-        const [a,b,c,d] = Array.from(arguments)
+        const [a, b, c, d] = Array.from(arguments)
         return `let g:${a}["${b}"]["${c}"] = "${d}"`
     }
     return `let g:${dict}["${key}"] = "${value}"`
 }
-module.exports.toVimVariable = toVimVariable
-module.exports.toConfig = toConfig
-module.exports.toVimDict = toVimDict
-module.exports.isLogicFunction = isLogicFunction
-module.exports.isGetFunction = isGetFunction
-module.exports.sortByOccurence = sortByOccurence
-
 function splitparsef(dict, fallback, regex = ' ') {
     return function splitparse(s) {
         let [a, b] = splitonce(s, regex)
@@ -5601,15 +6977,18 @@ function splitparsef(dict, fallback, regex = ' ') {
     // reminds me of argsplit...
 }
 
-
-
-function splitCamelCase(x) {
+function splitCamelCase(x, preserveCase) {
     return x
         .trim()
-        .replace(/[a-z][A-Z]/g, (s) => s[0] + ' ' + s[1].toLowerCase())
+        .replace(
+            /[a-z][A-Z]/g,
+            (s) =>
+                s[0] +
+                ' ' +
+                (preserveCase ? s[1] : s[1].toLowerCase())
+        )
         .split(' ')
 }
-
 
 function mergeSingleLetters(s) {
     return s.replace(/(?:(?:^| )[a-zA-Z]\b){2,}/g, (x) => {
@@ -5618,43 +6997,12 @@ function mergeSingleLetters(s) {
     })
 }
 
-
-class LoadUnload {
-    constructor() {
-        this.touched = false
-    }
-    load(x) {
-        if (!exists(x)) return
-        if (this.touched) {
-            this.store = merge(this.store, x)
-        } else {
-            this.touched = true
-            this.store = x
-        }
-    }
-    unload() {
-        this.touched = false
-        return this.store
-    }
-}
-
-module.exports.removeExtension = removeExtension
-module.exports.tail = tail
-module.exports.toPascal = toPascal
-module.exports.toArray = toArray
-
 function fixPath(s) {
     if (test(/^[\'\"]/, s)) {
         s = s.slice(1, -1)
     }
     return test(/^\w/, s) ? './' + s : s
 }
-module.exports.fixPath = fixPath
-module.exports.xsplit = xsplit
-module.exports.toDashCase = toDashCase
-
-
-
 function once(fn, ...args) {
     if (typeof __once__ == 'undefined') {
         let value = fn(...args)
@@ -5665,6 +7013,15 @@ function once(fn, ...args) {
         return null
     }
     return __once__
+}
+
+
+const randomWords = ['APPLE', 'BANANA', 'CUCUBMBER']
+function exciting() {
+    if (typeof __once__ == 'undefined') {
+            __once__ = copy(randomWords)
+    }
+    return {'exciting': __once__.pop()}
 }
 
 function seen(x) {
@@ -5679,10 +7036,6 @@ function seen(x) {
 }
 
 //forEach(['a', 'b', 'c', 'd', 'e'], console.log).then((x) => console.log('do'))
-module.exports.ncg = ncg
-
-
-
 class FunctionBuilder extends Builder {
     constructor() {
         super()
@@ -5694,49 +7047,37 @@ class FunctionBuilder extends Builder {
     }
     getValue() {
         const value = parens(this.toString(String))
-        console.log(value)
+        //console.log('value of brought to life fn', value)
         return eval(value)
     }
     toString() {
-        return `function ${this.name}(${this.params.join(', ')}) {${newlineIndent(super.toString())}}`
+        return toStringFunction(
+            this.name,
+            this.params,
+            super.toString()
+        )
+        return `function ${this.name}(${this.params.join(
+            ', '
+        )}) {${newlineIndent(super.toString())}}`
     }
 }
 
-
-    //const newIndex = modularIncrement(8,  1, 0, 8)
-    //display({newIndex})
-module.exports.atSecond = atSecond
-
-
+//const newIndex = modularIncrement(8,  1, 0, 8)
+//display({newIndex})
 function splitNumberBoundary(s) {
     return split(s, /(\d+)/).filter(exists).map(toNumber)
 }
-module.exports.splitNumberBoundary = splitNumberBoundary
-
-module.exports.getLast = getLast
-
-function foo({x='hi'} = {}) {
+function foo({ x = 'hi' } = {}) {
     assert(1 == 2)
 }
-module.exports.n2char = n2char
-
 //module.exports.getErrorInfo = getErrorInfo
-module.exports.getStackInfo = getStackInfo
-
-
 function functionProxy(context, method, fn) {
-  return function functionProxyRunner(...args) {
-    if (fn) fn()
-    method.call(context, ...args)
-  }
+    return function functionProxyRunner(...args) {
+        if (fn) fn()
+        method.call(context, ...args)
+    }
     //console.warn = functionProxy(console, console.warn, vueWarn)
 }
-
-
-
-
-
-
 
 s = `
 
@@ -5763,7 +7104,6 @@ s = `
 //
 //console.log(['a', 'b', 'c', 'd', 'e'].slice(-3))
 
-
 function isStorageSchema(x) {
     const entries = isObject(x) && Object.entries(x)
     return entries && entries[0] && isArray(entries[0][1])
@@ -5779,12 +7119,12 @@ function toStorageSchema(data) {
         return data
     }
     if (isObject(first)) {
-        return reduce(entries, (k,v) => [k, [v]])
+        return reduce(entries, (k, v) => [k, [v]])
     }
 
     if (isString(first)) {
         console.log('is a stirng')
-        return reduce(entries, (k,v) => [k, [v]])
+        return reduce(entries, (k, v) => [k, [v]])
     }
     return data
     //return entries && entries[0] && isArray(entries[0][1])
@@ -5796,16 +7136,14 @@ function getModuleExports(s) {
 }
 
 const catpics = [
-  //'dancing.jpg',
-  'fist on chin.jpg',
-  'flying.jpg',
-  'like a boss.jpg',
-  'ocean sunset.jpg',
-  'pose f.jpg',
+    //'dancing.jpg',
+    'fist on chin.jpg',
+    'flying.jpg',
+    'like a boss.jpg',
+    'ocean sunset.jpg',
+    'pose f.jpg',
 ]
 
-
-module.exports.getModuleExports = getModuleExports
 //storage = new Storage()
 //storage.add('a', 'b', 'c')
 //storage.add('a', 'b', 'd')
@@ -5815,25 +7153,13 @@ module.exports.getModuleExports = getModuleExports
 //
 function foo() {
     console.log('hi')
-    assert(1==2)
+    assert(1 == 2)
 }
-module.exports.toNumber = toNumber
-module.exports.getChunks = getChunks
-module.exports.display = display
-
 //bringToLife('const foo = go\nconst boo = hi\nyoyo')
-module.exports.removeComments = removeComments
-
-
-module.exports.splitThePage = splitThePage
-module.exports.mreplace = mreplace
-module.exports.replace = replace
-module.exports.parens = parens
-module.exports.test = test
-
 function regexTemplater(r, dict) {
     let s = r.source.replace(/\$(\w+)/g, (_, x) => {
-        if (x == '1') return prepareIterable(dict, 'keys').join('|')
+        if (x == '1')
+            return prepareIterable(dict, 'keys').join('|')
     })
     let value = RegExp(s, r.flags)
     return value
@@ -5851,24 +7177,21 @@ function dynamicGetterSetter(state, key, callback) {
     const set = () => {
         return state['_' + key]
     }
-    Object.defineProperty(state, key, {get, set})
+    Object.defineProperty(state, key, { get, set })
 }
 
-
 function hasReturnValue(s) {
-    return s.toString().includes('return')
+    return test(/return \S/, s.toString())
 }
 
 function defineFunctionProperty(state, k, v) {
-
     if (hasReturnValue(v)) {
         const get = () => {
             const value = v(state)
             return value
         }
-        Object.defineProperty(state, k, {get})
-    }
-    else {
+        Object.defineProperty(state, k, { get })
+    } else {
         state[k] = (...args) => v(state, ...args)
     }
 }
@@ -5878,51 +7201,33 @@ function defineProperty(state, k, v) {
         return value
     }
 
-    Object.defineProperty(state, k, {get})
+    Object.defineProperty(state, k, { get })
 }
 
 //class Foo {
-    //constructor() {
-        //this.s = 'hi'
-    //}
+//constructor() {
+//this.s = 'hi'
+//}
 //}
 //function cmf(foo) {
-    //return foo.s + 'soooup'
+//return foo.s + 'soooup'
 //}
 //foo=new Foo()
 //defineProperty(foo, 'boo', cmf)
 //foo.boo // gets a value
 
-module.exports.mapConditional = mapConditional
-module.exports.getLastWord = getLastWord
-module.exports.endsWithWord = endsWithWord
-module.exports.getFirstWord = getFirstWord
-module.exports.splitMapJoin = splitMapJoin
-module.exports.rescape = rescape
-module.exports.toVariable = toVariable
-module.exports.hasSymbol = hasSymbol
 //console.log(toFunctionRegex('foo'))
-module.exports.trimmed = trimmed
-module.exports.count = count
-
 //console.log(getOptions('grid ab h=120', {height:30}, Object))
-module.exports.removeQuotes = removeQuotes
-module.exports.mapfilter = mapfilter
 //console.log(brackify('', ['a', 'b', 'c', 'd', 'e'].join(',\n')))
-//l 
+//l
 //console.log(toStringArgument(['a', 'b', 'c', 'd', 'e']))
 //
 
 function toArrayOrObjectList(s, mode) {
-    const [a,b] = mode == Array ? ['[', ']'] : ['{', '}']
+    const [a, b] = mode == Array ? ['[', ']'] : ['{', '}']
     return a + newlineIndent(s.join(',\n') + ',') + b
 }
 //console.log(toArrayOrObjectList(['a', 'b', 'c', 'd', 'e']))
-module.exports.filtered = filtered
-module.exports.toArrayOrObjectList = toArrayOrObjectList
-module.exports.bringToLifeLambda = bringToLifeLambda
-
-
 function isEven(n) {
     return n % 2 == 0
 }
@@ -5931,17 +7236,16 @@ function isOdd(n) {
     return n % 2 == 1
 }
 
-module.exports.isFunction = isFunction
-
-
 function divify(tag, className, x) {
-    let attrs = className.includes('=') ? 
-        ' ' + className :
-        className ? ` class="${className}"` : ''
+    let attrs = className.includes('=')
+        ? ' ' + className
+        : className
+        ? ` class="${className}"`
+        : ''
     if (!x) x = ''
     let s = `<${tag}${attrs}>`
 
-    if (isArray(x) || isString(x) && hasNewline(x)) {
+    if (isArray(x) || (isString(x) && hasNewline(x))) {
         s += newlineIndent(x)
     } else {
         s += x
@@ -5950,53 +7254,15 @@ function divify(tag, className, x) {
     s += `</${tag}>`
     return s
 }
-module.exports.divify = divify
-
-
-
-module.exports.splitThePage = splitThePage
-module.exports.getWords = getWords
-module.exports.bringToLifeImports = bringToLifeImports
-
-function bringToLifeImports(s) {
-    // doesnt work
-    let [a,b] = search(/from (.*?) import (.+)/, s)
-    b = getWords(b)
-    const statement = toModuleImports(a, b)
-    console.log(statement)
-    eval(statement)
-}
-
-function isImport(s) {
-    return test(/^import|const {|require|^from/, s)
-}
-module.exports.isImport = isImport
-module.exports.hasNewline = hasNewline
-module.exports.removeSpaces = removeSpaces
-module.exports.Iter = Iter
-module.exports.isWord = isWord
-module.exports.bringToLife = bringToLife
-module.exports.isStandardHtml = isStandardHtml
-module.exports.getLastWord = getLastWord
-module.exports.capitalize = capitalize
-
-
 //console.log(expensiveFuzzyMatch('mes', ['element-const-com', 'foOn', 'hi']))
-module.exports.paired = paired
-
-
-function  removeStartingSymbols(s) {
+function removeStartingSymbols(s) {
     return s.replace(/^\W+/, '')
 }
-module.exports.removeStartingSymbols = removeStartingSymbols
-
 function removeSymbols(s) {
     return s && s.replace(/[^\w-]+/g, '')
 }
 
-// ------------------------------------------ 
-
-
+// ------------------------------------------
 
 function edit(x, ...args) {
     if (isArray(x)) {
@@ -6021,61 +7287,119 @@ function edit(x, ...args) {
     }
 }
 
-
-
 function isWordy(s) {
     const regex = /[a-zA-Z\']+ [a-zA-Z\']+ [a-zA-Z\']+/
     return test(regex, s)
 }
 
-
-    //dicts = [{a:1, b:2, c:3}, {ac:1, cb:2, cc:3}]
-    //const regex = ncg('($1)(\\d+)|($2)\\b', dicts, 'g')
-    //console.log(regex)
-    //
-    //
-    //
+//dicts = [{a:1, b:2, c:3}, {ac:1, cb:2, cc:3}]
+//const regex = ncg('($1)(\\d+)|($2)\\b', dicts, 'g')
+//console.log(regex)
+//
+//
+//
 s = `
 
         #katex-question katex=question
         #math-quill ref @onEnter focusIt
 `
 
-
-
 s = `
 
 
----------------------------
 hi
 `
 
 //console.log(splitThePage(s))
 //
 
+function stringify2(x, options) {
+    // hard.
+    function stringWrapper(s) {
+        return h('string', s)
+    }
 
+    const checkpoint = isVueElement
 
-function walk(x, fn) {
-    let ref
+    function runner3(x) {
+        const type = typeOf(x)
+        const value = options[type](x, type)
+        return checkpoint(value) ? value : runner3(value)
+    }
+
     function runner(x) {
-        ref = x
-        for (let [k, v] of Object.entries(ref)) {
-            if (isObject(v)) {
-                runner(v)
-            }
-            else {
-                const value = fn && fn(v)
-                if (value == null) continue 
-                ref[k] = value
-            }
+        const value = runner2(x)
+        return options.condition(value) ? value : runner(value)
+    }
+
+    function runner2(x) {
+        if (isFunction(x)) {
+            return options.functionWrapper(x)
+        }
+        if (isPrimitive(x)) {
+            return options.stringWrapper(x)
+        }
+        if (isArray(x)) {
+            return options.arrayWrapper(x.map(runner))
+        }
+        if (isObject(x)) {
+            return options.objectWrapper(
+                Object.entries(x).map(atSecond(runner))
+            )
         }
     }
-    runner(x)
-    return x
+    /* this will create a component */
+    return runner(x)
+}
+function walk(x, fn, depthLimit = 5) {
+    function walker(x, depth, a) {
+        if (depth > depthLimit) {
+            return evaluator(x)
+        }
+        if (isArray(x)) {
+            return x.map((y) => walker(y, depth + 1))
+        }
+
+        if (isObjectLiteral(x)) {
+            return Object.entries(x).reduce((acc, [a, b]) => {
+                acc[a] = walker(b, depth + 1, a)
+                return acc
+            }, {})
+        }
+        return evaluator(x, depth, a)
+    }
+
+    function evaluator(x, depth, a) {
+        const value = fn(x, depth, a)
+        return value == null ? x : value
+    }
+    return walker(x, 0)
+}
+
+
+function simpleWalk(x, fn) {
+    function walker(x) {
+        if (isArray(x)) {
+            return x.map(walker)
+        }
+
+        if (isObjectLiteral(x)) {
+            return Object.entries(x).reduce((acc, [a, b]) => {
+                acc[a] = walker(b)
+                return acc
+            }, {})
+        }
+        return evaluator(x)
+    }
+
+    function evaluator(x) {
+        const value = fn(x)
+        return value == null ? x : value
+    }
+    return walker(x)
 }
 
 //console.log(walk({a:1, b:2, c: {a:1, b:2, c:3}}))
-
 
 function allowIgnoreFilterFactory(allow, ignore, ignoreRE) {
     const filter = (x) => {
@@ -6087,51 +7411,51 @@ function allowIgnoreFilterFactory(allow, ignore, ignoreRE) {
     return filter
 }
 
-
-module.exports.getQuotes = getQuotes
-module.exports.getExtension = getExtension
-module.exports.unique = unique
-
-
 function toHtmlRegex(tag, capture) {
-    const content =  capture ? '([^]+?)' : '[^]+?'
+    const content = capture ? '([^]+?)' : '[^]+?'
     return `<${tag}.*?>${content}</${tag}>`
 }
-
-
-
 
 function removeHtmlComments(s) {
     return s.replace(/<!--[^]+?--> *\n*/g, '')
 }
 //console.log({a:1, b:2, c:3}.toString())
-//l 
+//l
 //console.log(timestamp('hi'))
 //console.log(getHMSM())
-module.exports.toHtmlRegex = toHtmlRegex
-module.exports.hasNewline = hasNewline
-module.exports.findall = findall
-module.exports.isWord = isWord
-module.exports.char2n = char2n
-
-
 function stop() {
     throw 'stoping'
 }
-function assignFresh(to, from) {
+
+function assignAliases(state, ref, ...keys) {
+    for (let key of gatherArgs(keys)) {
+        state[key] = ref[key].bind(ref)
+    }
+}
+function assignFresh(to, from, callback) {
     for (let [k, v] of Object.entries(from)) {
-        if (!to.hasOwnProperty(k) ) {
-            to[k] = v
+        if (!to.hasOwnProperty(k)) {
+            if (v != null) to[k] = v
+        } else if (callback) {
+            callback(k, v)
         }
     }
 }
-
-
-function assignExisting(to, from) {
-    for (let [k, v] of Object.entries(from)) {
-        if (to.hasOwnProperty(k) ) {
-            to[k] = v
+function mergeOnTop(a, b) {
+    for (let [k, v] of Object.entries(b)) {
+        if (a.hasOwnProperty(k)) {
+            a[k] = merge(a[k], v)
+        } else {
+            a[k] = v
         }
+    }
+    return a
+}
+
+function assignExisting(base, incumbent) {
+    for (let k of Object.keys(base)) {
+        const v = incumbent[k]
+        if (v != null) base[k] = v
     }
 }
 
@@ -6140,7 +7464,7 @@ function rng(min = 1, max = 10) {
 }
 
 function randomPick(items) {
-    if(!isArray(items)) return items
+    if (!isArray(items)) return items
     return items[Math.floor(Math.random() * items.length)]
 }
 
@@ -6155,15 +7479,15 @@ function onceFactory(fn) {
 }
 //console.log(merge({a:1}))
 
-
 function getIndexesOf(items, fn) {
-    return items.map((item, i) => {
-        return fn(item) ? i : null
-    }).filter(notNull)
+    return items
+        .map((item, i) => {
+            return fn(item) ? i : null
+        })
+        .filter(notNull)
 }
 //console.log(reduce(['hi'], (x) => null))
 //console.log(getIndexesOf([1,2,3], identity))
-
 
 //console.log(once(identity, 3))
 //console.log(once(identity, 3))
@@ -6188,9 +7512,8 @@ function getIndexesOf(items, fn) {
 // ------------------------------------------ silly
 
 function schemaMatch(schema, s, flags = 'g') {
-
     const captureDictionary = {
-        'quote': '(?:\'(.*?)\'|\"(.*?)\")',
+        quote: '(?:\'(.*?)\'|"(.*?)")',
         mathvar: '\\w+(?:\\^\\w+)?',
         //line: '(?:^|\\n)(.+)(?=\\n|$)',
         line: '\\S.+',
@@ -6208,11 +7531,11 @@ function schemaMatch(schema, s, flags = 'g') {
     }
 
     const noCaptureDictionary = {
-        'q': '\\?',
-        's': '\\s*',
-        'ws': '\\s+',
-        'to': '[^]+?',
-        'linebreak': ' *(?:\\n+|$)',
+        q: '\\?',
+        s: '\\s*',
+        ws: '\\s+',
+        to: '[^]+?',
+        linebreak: ' *(?:\\n+|$)',
     }
 
     let keys = []
@@ -6225,24 +7548,26 @@ function schemaMatch(schema, s, flags = 'g') {
     regex = RegExp(regex, flags)
 
     function prepareSchema(s) {
-
         const SchemaDictionary = {
             arr: '[$1,$1]',
             config: '$word $any(?=  |$)',
-            config:'$sym $sym',
+            config: '$sym $sym',
         }
 
         if (s in SchemaDictionary) s = SchemaDictionary[s]
-        return s.replace(/ *([\[\]. :,]) */g, (_, x, offset, o) => {
-            if (x == '[' || x == ']' || x == '.') return '\\' + x
-            if (x == ' ') return ' +'
-            if (x == ':' && o[offset - 1] == '?') return ':'
-            if (x == ':' || x == ',') return ` *${x} *`
-        })
+        return s.replace(
+            / *([\[\]. :,]) */g,
+            (_, x, offset, o) => {
+                if (x == '[' || x == ']' || x == '.')
+                    return '\\' + x
+                if (x == ' ') return ' +'
+                if (x == ':' && o[offset - 1] == '?') return ':'
+                if (x == ':' || x == ',') return ` *${x} *`
+            }
+        )
     }
 
     function regexParser(_, x) {
-
         if (x in noCaptureDictionary) {
             return noCaptureDictionary[x]
         }
@@ -6296,11 +7621,16 @@ function schemaMatch(schema, s, flags = 'g') {
                     continue
                 }
                 match = match.trim()
-                console.log({name: names[index], match, keys, index, r:keys[index]})
+                console.log({
+                    name: names[index],
+                    match,
+                    keys,
+                    index,
+                    r: keys[index],
+                })
                 if (keys[index]) {
                     store.push(findall(keys[index], match))
-                }
-                else {
+                } else {
                     store.push(toArgument(match))
                 }
             }
@@ -6309,9 +7639,7 @@ function schemaMatch(schema, s, flags = 'g') {
         return smallify(output)
         return output
         return store
-    }
-
-    else {
+    } else {
         let match = s.match(regex)
     }
 }
@@ -6343,31 +7671,18 @@ x^2 + 5x + 6 : green
 
 //const items = schemaMatch('^[$any,$any]:$any|$any:$any', s, 'gm')
 //console.log(items)
-module.exports.dreplace = dreplace
-module.exports.testf = testf
-module.exports.templater = templater
-module.exports.hasNewline = hasNewline
-module.exports.tail = tail
-module.exports.sorted = sorted
 //console.log(abbreviate('doGo'))
 //
 //
 //
 
-module.exports.schemaMatch = schemaMatch
-module.exports.search = search
-
 class MathRearrangement {
     constructor(s) {
         this.s = s
     }
-    generate() {
-        
-    }
+    generate() {}
     //const arrange = new MathRearrangement('y = x + 4')
 }
-
-
 
 s = `
 
@@ -6375,12 +7690,9 @@ The graph of f(x) crosses the yax at the coordinate point (a,b).
 wmtv of a be? ans cbd a b 0      
 `
 
-sc='$A$q$s(?:ans)? *(?:$mc|$para)'
+sc = '$A$q$s(?:ans)? *(?:$mc|$para)'
 
 //console.log(schemaMatch(sc, s))
-module.exports.getModuleExports = getModuleExports
-
-
 function getOptionsFromSchema(s, schema) {
     const options = {}
     const keys = []
@@ -6401,7 +7713,6 @@ function getOptionsFromSchema(s, schema) {
     return [s.trim(), options]
 }
 
-
 s = `
 
             case 'symbol':
@@ -6412,8 +7723,6 @@ s = `
 
 //s=schemaMatch('case $quote$to#return $quote', s)
 //console.log(s)
-module.exports.optiongetter = optiongetter
-
 s = `
 bb
 nn
@@ -6423,23 +7732,12 @@ h
 h
 `
 
-    //let [imports, html] = schemaMatch('$lines\\n\\s+$rest', s)
-    //console.log(imports)
-
-module.exports.isLink = isLink
-module.exports.deletef = deletef
-module.exports.looksLikeRegex = looksLikeRegex
-module.exports.removeEs6 = removeEs6
-module.exports.replaceLast = replaceLast
-module.exports.removeComments = removeComments
-module.exports.Storage = Storage
+//let [imports, html] = schemaMatch('$lines\\n\\s+$rest', s)
+//console.log(imports)
 
 //s = 'const $1 = PM.${getLastWord($a, $3)}'
 //console.log(spicyTemplater(s, {'a': sayhi, '1': 'vvv'}))
 //l spicyReplace
-module.exports.spicyReplace = spicyReplace
-module.exports.toArgument = toArgument
-
 function defineAliases(state, object, dict) {
     for (let [k, v] of Object.entries(dict)) {
         state[k] = object[v].bind(v)
@@ -6452,7 +7750,9 @@ class KVStorage {
     }
 
     add(key, value, data) {
-        const payload = data ? {...data, key, value} : {key, value}
+        const payload = data
+            ? { ...data, key, value }
+            : { key, value }
         this.store.push(payload)
         return value
     }
@@ -6472,18 +7772,12 @@ class KVStorage {
 }
 
 //console.log(typist('hi<c-s>'))
-module.exports.getLastLine = getLastLine
-module.exports.getLastLine = getLastLine
-module.exports.typist = typist
-module.exports.getFirstLine = getFirstLine
-module.exports.addExtension = addExtension
-module.exports.dog = dog
 //console.log(tally(['hi', 'hi', 'go']))
 //l n
 //console.log(n2char(0))
 // ------------------------------------------ silly
 function letterRange(x) {
-    let [a,b] = split(x, '-')
+    let [a, b] = split(x, '-')
     a = char2n(a)
     b = char2n(b)
     let store = []
@@ -6509,8 +7803,6 @@ function recursiveDataBuilder(depth) {
     const store = {}
 }
 
-
-
 function debounce(fn, delay = 250) {
     let id
     return function debouncedFunction(...args) {
@@ -6521,29 +7813,75 @@ function debounce(fn, delay = 250) {
     }
 }
 //console.log(splitLast('abcbd', 'b'))
-module.exports.splitLast = splitLast
 //console.log(range('3-5'))
-module.exports.isStringNumberRange = isStringNumberRange
-s=['a', 'b', 'c', 'd', 'e']
+s = ['a', 'b', 'c', 'd', 'e']
 //console.log(numbered(s))
-module.exports.numbered = numbered
-module.exports.dynamicGetterSetter = dynamicGetterSetter
-module.exports.textTable = textTable
 //console.log(textTable(['a', 'b', 'c', 'd', 'e', ...'ggggggggg'.split('')]))
 //console.log(range('1-3'))
-module.exports.getSingleAndDoubleAttrs = getSingleAndDoubleAttrs
 //console.log(randomColor())
 //console.log(randomColor())
 //console.log(randomColor())
 //console.log(range(2))
 //
+class Breaker {
+    constructor(limit) {
+        this.limit = limit || 3
+    }
+    singleton(key) {
+        if (!this.storage) this.storage = new Storage(Number)
+        this.raise(this.storage.add(key), key)
+    }
+    init(key) {
+        if (!this.key || key != this.key) {
+            this.key = key
+            this.count = 0
+        }
+
+        this.raise(++this.count, key)
+    }
+
+    raise(n, message) {
+        if (n >= this.limit) {
+            throw new Error(message)
+        }
+    }
+}
+function BreakerFactory(n = 5) {
+    let count = 0
+    return function lambda(fn) {
+        if (++count == n) {
+            if (fn) {
+                fn()
+                return true
+            }
+            throw 'breaker'
+        }
+    }
+}
+
+function getAndGetAgain(fn, delay = 100) {
+    let id
+    let breaker = BreakerFactory(5)
+    return new Promise((resolve, reject) => {
+        id = setInterval(() => {
+            breaker()
+
+            console.log('hi')
+            const value = fn()
+            if (value) {
+                resolve(value)
+                clearInterval(id)
+                return
+            }
+        }, delay)
+    })
+}
 function tryAndTryAgain(fn, ...args) {
     let id = setInterval(() => {
         try {
             fn(...args)
             clearInterval(id)
-        }
-        catch(e) {
+        } catch (e) {
             console.log('trying agan')
         }
     }, 1000)
@@ -6551,17 +7889,9 @@ function tryAndTryAgain(fn, ...args) {
     function runner() {
         try {
             fn(...args)
-        }
-        catch(e) {
-        
-        }
+        } catch (e) {}
     }
 }
-
-
-
-module.exports.highFrequencyJavascriptUtilities = highFrequencyJavascriptUtilities
-module.exports.addExtension = addExtension
 
 function buildFileRelations() {
     /* he */
@@ -6586,15 +7916,16 @@ function gatherArgs(args) {
     if (isArray(args[0]) && args.length == 1) {
         return args[0]
     }
+    if (args.some(isArray)) {
+        return flat(args)
+    }
     return args
 }
 
-module.exports.gatherArgs = gatherArgs
 function assertion(x) {
     if (x == null) {
         throw new AssertiongError()
-    }
-    else {
+    } else {
         //console.log('the value of x has been asserted')
         return x
     }
@@ -6610,15 +7941,35 @@ async function actions(n, fn, delay = 1000, state) {
 function optiongetter(s) {
     return mreplace(/^# *(\w+) *(.*)/gm, s.toString())
 }
-module.exports.isClassObject = isClassObject
-module.exports.isClass = isClass
-module.exports.getErrorInfo = getErrorInfo
-module.exports.breaker = breaker
-module.exports.scopedEval = scopedEval
-module.exports.sleep = sleep
-function waterfall(promises) {
-    return promises.reduce((acc, promise) => {
+function waterfall(items, onTick, callback) {
+    let id
+    let i = 0
+    let max = items.length
+    let delay
+
+    function runner(x) {
+        let item = items[i++]
+        //console.log(item)
+        delay = item.delay || 1000
+        onTick(item)
+        if (i == max) {
+            clearTimeout(id)
+            setTimeout(() => {
+                callback()
+            }, delay + 250)
+            return
+        }
+        id = setTimeout(() => {
+            runner()
+        }, delay)
+    }
+    runner()
+}
+
+function waterfall2(promises) {
+    return promises.reduce((acc, promise, i) => {
         return acc.then(() => {
+            console.log('sup', [i])
             return promise.then(() => {
                 return true
             })
@@ -6626,14 +7977,10 @@ function waterfall(promises) {
     }, Promise.resolve([]))
 }
 
-function variableExists(v) {
-    return eval(`typeof ${v} != undefined`)
-}
-
 function incrementName(name, offset = 1) {
-    return test(/\d$/, name) ? 
-        name.replace(/\d+$/, (x) => Number(x) + offset) :
-        name + '1'
+    return test(/\d$/, name)
+        ? name.replace(/\d+$/, (x) => Number(x) + offset)
+        : name + '1'
 }
 function defineVariable(a, b) {
     eval(`${a} = ${b}`)
@@ -6648,85 +7995,44 @@ function defineVariable(a, b) {
 //console.log(b.index)
 //console.log(b.peek())
 //console.log(search(/(hi)i/g, 'hiii'))
-module.exports.smallify = smallify
-module.exports.expensiveFuzzyMatch = expensiveFuzzyMatch
-module.exports.boundary = boundary
-module.exports.tally = tally
 //console.log((new Tally(['fb', 'b', 'cc', 'cc', 'e'])).lowest())
-module.exports.Tally = Tally
 //console.log(split('h\n\nb', '\n'))
-module.exports.doglog = doglog
-module.exports.simpleSpellcheck = simpleSpellcheck
-module.exports.Indexed = Indexed
-function datemark04082022() {
-    
-}
+function datemark04082022() {}
 
 function getThis(state, regex) {
     const value = mapfilter(Object.entries(state), (x) => {
-        return (!isFunction(x[1]) && test(regex, x[0])) && [x[0], x[1]]
+        return (
+            !isFunction(x[1]) &&
+            test(regex, x[0]) && [x[0], x[1]]
+        )
     })
     return reduce(value)
 }
 
-
-module.exports.Watcher = Watcher
-
-
-module.exports.rng = rng
 //console.log(toDashCase('hi'))
 //console.log(toDashCase('Hi'))
 //console.log(toDashCase('Hi-go'))
 //console.log(toDashCase('HiGo'))
 //console.log(stringify('2 + 4'))
 //let k = 'fooDirectivveff'
-        //let r = /(\w+)(Directive)|(nativeOn|on)(\w+)/
-        //let match = search(r, k)
-        //console.log(match)
+//let r = /(\w+)(Directive)|(nativeOn|on)(\w+)/
+//let match = search(r, k)
+//console.log(match)
 
-        //k = 'Toooo'
-        //k = toCamelCase(k)
-        //console.log(k)
+//k = 'Toooo'
+//k = toCamelCase(k)
+//console.log(k)
 function foo() {
-   boo()
+    boo()
 }
 //foo()
 function boo() {
     console.log(getCaller(2))
 }
-module.exports.Spellcheck = Spellcheck
-
-
-module.exports.Spellcheck = Spellcheck
-module.exports.spellcheckFactory = spellcheckFactory
-
 //generateRandomHtml
-    //js = boo
-    //const {name, parameters} = getFunctionInfo(js)
-    //console.log({name, parameters})
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//js = boo
+//const {name, parameters} = getFunctionInfo(js)
+//console.log({name, parameters})
 
 s = `
 
@@ -6747,10 +8053,9 @@ const standards = {
     equations: {
         circle(h, k, r) {
             return `(x - ${h})^2 + (y - ${k})^2 = ${r}^2`
-        }
-    }
+        },
+    },
 }
-
 
 function lineNeedsEndingColon(s) {
     if (test(/[^a-zA-Z]$/, s)) {
@@ -6774,31 +8079,40 @@ function infuseSpanColors(s, colors) {
         colors = reduce(colors, rainbow)
     }
     const regex = ncg('\\b($1)\\b|({{(?:$1)}})', colors)
-    return replace(regex, (_, a, b) => {
-        let value = a || b
-        let color = colors ? colors[getFirstWord(value)] : rainbow()
-        return spanify(value, {style: {color}})
-    }, s, 'g')
+    return replace(
+        regex,
+        (_, a, b) => {
+            let value = a || b
+            let color = colors
+                ? colors[getFirstWord(value)]
+                : rainbow()
+            return spanify(value, { style: { color } })
+        },
+        s,
+        'g'
+    )
 }
 function spanify(value, options) {
     if (isString(options)) {
         options = {
-            style: cssEvaluator(options)
+            style: cssEvaluator(options),
         }
     }
-    const attrs = Object.entries(options).reduce((acc, [a,b], i) => {
-        acc += a + '="'
-        if (a == 'style') {
-            if (isObject(b)) {
-                for (let [k, v] of Object.entries(b)) {
-                    acc += k + ': ' + v + '; '
+    const attrs = Object.entries(options)
+        .reduce((acc, [a, b], i) => {
+            acc += a + '="'
+            if (a == 'style') {
+                if (isObject(b)) {
+                    for (let [k, v] of Object.entries(b)) {
+                        acc += k + ': ' + v + '; '
+                    }
                 }
+                acc = acc.trim()
             }
-            acc = acc.trim()
-        }
-        acc += '" '
-        return acc
-    }, '').trim()
+            acc += '" '
+            return acc
+        }, '')
+        .trim()
     return divify('span', attrs, value)
 }
 
@@ -6807,13 +8121,6 @@ function spanify(value, options) {
 //console.log(s)
 //console.log(standards.equations.circle(2,3,4))
 //derived from functions on StackOverflow http://bit.ly/30qC25j
-module.exports.bindObject = bindObject
-module.exports.doglog = doglog
-module.exports.capitalize = capitalize
-module.exports.isString = isString
-module.exports.identity = identity
-module.exports.spellcheckFactory = spellcheckFactory
-module.exports.rainbow = rainbow
 //console.log(splitonce(['a', 'b']))
 //
 
@@ -6822,19 +8129,19 @@ function validArgs(args) {
 }
 
 function schemaRegexFactory(schema, fn) {
-    let [a,template] = split(schema, / *\.\.\. */)
+    let [a, template] = split(schema, / *\.\.\. */)
     const dict = {
-        'wallu': '[^]+?',
-        'function': 'function',
+        wallu: '[^]+?',
+        function: 'function',
         //'\\n': '\\\\n',
         //'\\cw': '(\\\\w+)',
         //'\\w': '\\\\w+',
-        'n': '\\n',
-        'cw': '(\\w+)',
-        'w': '\\w+',
-        'dotu': '.*?',
-        's8': ' {8}',
-        's4': ' {4}',
+        n: '\\n',
+        cw: '(\\w+)',
+        w: '\\w+',
+        dotu: '.*?',
+        s8: ' {8}',
+        s4: ' {4}',
     }
     let flags = 'g'
     let r = RegExp(dreplace(a, dict, null), flags)
@@ -6848,13 +8155,11 @@ function schemaRegexFactory(schema, fn) {
     }
 }
 
-
 // to be out of sight ...
-module.exports.schemaRegexFactory = schemaRegexFactory
 //functionStore = ['vds', 'vvv']
-        //s = 'vds(fo) vvv(vds(fo)'
-        //s = s.replace(ncg(functionStore), 'utilsjs.$&')
-        //console.log(s)
+//s = 'vds(fo) vvv(vds(fo)'
+//s = s.replace(ncg(functionStore), 'utilsjs.$&')
+//console.log(s)
 
 s = `
 
@@ -6864,17 +8169,9 @@ function hasHtml(s) {
 `
 
 //console.log(smartDedent(s))
-module.exports.schemaRegexFactory = schemaRegexFactory
-module.exports.smartDedent = smartDedent
-module.exports.removeThis = removeThis
-
 function removeThis(s) {
     return s.replace(/\bthis\./g, '')
 }
-module.exports.itersearch = itersearch
-module.exports.debounce = debounce
-
-
 s = `
 Chapter 4: Circles
 
@@ -6886,11 +8183,11 @@ and a radius :r
 //
 //
 
-
 function bindObjectToState(obj, state, transformer) {
-    if (!transformer) transformer = (x, state) => {
-        return x.bind(state)
-    }
+    if (!transformer)
+        transformer = (x, state) => {
+            return x.bind(state)
+        }
 
     return walk(obj, (x) => {
         if (isFunction(x)) {
@@ -6898,3 +8195,2209 @@ function bindObjectToState(obj, state, transformer) {
         }
     })
 }
+
+function bringFunctionsToLife(dict, state, transform) {
+    return reduce(dict, (k, v) => {
+        if (isFunction(v)) {
+            return [k, v]
+        }
+
+        const fn = new FunctionBuilder()
+        fn.name = toCamelCase(k)
+        if (transform) {
+            v = transform(v)
+        }
+
+        if (isThisFunction(v) && state) {
+            fn.append(v)
+            fn.params.push('...args')
+            return [k, fn.getValue().bind(state)]
+        } else if (isThisFunction(v)) {
+            v = v.replace(/\bthis\b/g, 'state')
+            fn.params.push('state')
+            if (v.includes('...args')) fn.params.push('...args')
+            fn.append(v)
+            return [k, fn.getValue()]
+        } else {
+            const param = itersearch(v, 'app', 'state', 'vue')
+            fn.params.push(param)
+            fn.params.push('...args')
+            fn.append(v)
+            //console.log(fn.toString())
+            return [k, fn.getValue()]
+        }
+    })
+}
+//class Foo {
+//constructor() {
+//this.s = 'hi from foo'
+//}
+//boo(s = '') {
+//console.log(this.s + s)
+//}
+//}
+//const ax = {
+//foo: 'console.log(app.s + "YO")',
+//foo: 'this.boo(...args)',
+//}
+//b = new Foo()
+//const x = bringFunctionsToLife(ax, b)
+//console.log(x.foo(b, 'hi'))
+//x.foo('vv')
+//console.log(type(null))
+//console.log(iterRange(3,5))
+//x = new CumulativeStorage()
+//x.add('b', 'b', 'c')
+//x.add('a', 'b')
+//x.add('d', 'b', Array)
+//x.add('d', 'c', Array)
+//x.add('b', 'f', 'cvv')
+//console.log(x.value)
+//
+
+s = `
+
+var board = JXG.JSXGraph.initBoard('jsxgraph', {
+    grid: false,
+    zoom: {
+        factorX: 'cv',
+        factorY: gogo,
+
+        wheel: false,
+        needshift: false,
+        eps: 0.1,
+    },
+})
+
+var ax1 = board.create('line', [
+`
+//console.log(split(1234))
+//console.log(Math.max([3, 4]))
+//
+//console.log(isIterable(new Set()))
+s = `
+
+const HTMLBuilderTemplate = \`
+    <!doctype html><html>
+        <head>
+            $dependencies
+
+\`
+`
+//console.log(new CodeLibrary(s))
+//console.log(getInterestingBindings('askjdhfasdkj sakdjfhsakdf('))
+//console.log(partition(['a', 'b', 'c', 'd', 'e', 'f', 'g'], 2))
+function schemaReplace(s, schema) {
+    let [a, b] = split(schema, / \.\.\. /)
+    let regex = rescape(a).replace(/\\\$(\w+)/g, (_, x) => {
+        if (x == 1) x == 'w'
+        return '(\\' + x + '+)'
+    })
+    regex = regex.replace(/[\'\"]/g, '[\'"]')
+    regex = RegExp(regex, 'g')
+    console.log(regex)
+    //console.log(regex); throw ''
+    const replacement = test(/\$\d/, b)
+        ? b
+        : bringToLifeLambda(b)
+    console.log(replacement)
+    const value = s.replace(regex, replacement)
+    return value
+    return s.replace(regex, value)
+}
+//console.log(getClassProperties(new Storage()))
+//$1 = 'hi'
+//console.log($1)
+//x= new Breaker()
+//x.init(1)
+//x.init(1)
+//x.init(1)
+//x.init(2)
+//x.init(1)
+//x.init(1)
+//x.init(1)
+//x.init(1)
+// yeah it works
+//
+
+//console.log(filter({a:1, b:2, c:3}, (x) => x > 1))
+//nlist =[['a', 'b']]
+//console.log(nlist.map(atFirst(addf('hi'))))
+
+function xveryMagicLogicHandler(s) {
+    const info = {
+        Array: [
+            'length',
+            'concat',
+            'fill',
+            'find',
+            'findIndex',
+            'lastIndexOf',
+            'pop',
+            'push',
+            'reverse',
+            'shift',
+            'unshift',
+            'slice',
+            'sort',
+            'splice',
+            'includes',
+            'indexOf',
+            'join',
+            //"keys",
+            //"entries",
+            //"values",
+            //"forEach",
+            //"filter",
+            //"flat",
+            //"flatMap",
+            //"map",
+            'every',
+            'some',
+            //"reduce",
+            //"reduceRight",
+        ],
+        //"Number": [
+        //"toExponential",
+        //"toFixed",
+        //"toPrecision",
+        //"toString",
+        //"toLocaleString"
+        //],
+        String: [
+            'length',
+            //"anchor",
+            //"big",
+            //"blink",
+            //"bold",
+            //"charAt",
+            //"charCodeAt",
+            //"codePointAt",
+            //"concat",
+            'endsWith',
+            //"fontcolor",
+            //"fontsize",
+            //"fixed",
+            'includes',
+            'indexOf',
+            //"italics",
+            //"lastIndexOf",
+            //"link",
+            //"localeCompare",
+            //"match",
+            //"matchAll",
+            //"normalize",
+            //"padEnd",
+            //"padStart",
+            'repeat',
+            'replace',
+            //"replaceAll",
+            //"search",
+            'slice',
+            //"small",
+            'split',
+            //"strike",
+            //"sub",
+            //"substr",
+            //"substring",
+            //"sup",
+            'startsWith',
+            'toString',
+            'trim',
+            'trimStart',
+            //"trimLeft",
+            'trimEnd',
+            //"trimRight",
+            //"toLocaleLowerCase",
+            //"toLocaleUpperCase",
+            'toLowerCase',
+            'toUpperCase',
+            //"at"
+        ],
+    }
+    s = 'ifhnl'
+    obj = { ifo: 'if (isObject($1)) {\n    $c\n}' }
+    const { spaces, first, second } = getLineInfo(s)
+    const { sol, eol, mol } = getCursorInfo()
+}
+function xnothingInfront(s) {}
+//console.log(~~true)
+
+function defineEmitProperty(state, key) {
+    function get() {
+        return this['_' + key]
+    }
+
+    function set(value) {
+        this['_' + key] = value
+        this.emit(key, value)
+    }
+
+    Object.defineProperty(state, key, { get, set })
+}
+
+//class Foo extends EventEmitter {
+//constructor() {
+//super()
+//defineEmitProperty(this, 's')
+//}
+//run() {
+//this.s = 'vvvsdf'
+//}
+//}
+//foo =new Foo()
+//foo.on('s', (x) => doglog(x))
+//foo.run()
+//['a', 'b', 'c', 'g', 'e'].sort().map(console.log)
+
+//console.log(split('goo', '.'))
+
+function endsWithParentheses(s) {
+    return test(/\)$/, s)
+}
+
+//console.log(join())
+//
+//const functionRE = /^(?:async )?function[^]+?\n}/gm
+//console.log(mreplace(functionRE, 's' + test.toString()))
+//
+//
+//
+
+//match='gi.s'
+//const [front, last] = splitOnceReverse(match, /\./)
+//console.log(front, last)
+
+//class Foo {
+//constructor() {
+//}
+//a() {
+//return capitalize(n2char(~~this.untitledIndex++))
+//}
+//}
+
+const StorageMixin = {
+    reduce(fn, checkpoint = exists) {
+        return Object.entries(this.store).reduce(
+            (acc, [a, b]) => {
+                const value = fn(b)
+                if (value && checkpoint(value)) acc[a] = value
+                return acc
+            },
+            {}
+        )
+    },
+    has(x) {
+        return this.store.hasOwnProperty(x)
+    },
+    set(key, value) {
+        if (key == null || value == null) return
+        this.store[key] = value
+    },
+    get(key) {
+        return this.store[key] || ''
+    },
+}
+
+function lengthDelta(a, b) {
+    const runner = (x) => (isNumber(x) ? x : x.length)
+    return Math.abs(runner(a), runner(b))
+}
+
+//c = new Clock()
+//e = c.createClock({
+//onTick(n) {
+//console.log('hi e', n)
+//console.log(arguments)
+//}
+//})
+//console.log(isSimilar(null, undefined))
+
+function indentAfterFirstLine(s, n) {
+    return replace('\n', '\n' + toSpaces(n), s, 'gm')
+}
+
+function templateToFunction(s) {
+    s = smartDedent(s)
+    let items = s.split(/(\$[a-zA-Z0-9]+)/)
+    let template = ''
+    let variables = new Set()
+    for (let i = 0; i < items.length; i++) {
+        let item = items[i]
+        if (item.startsWith('$')) {
+            item = item.slice(1)
+            if (isNumber(item)) {
+                item = n2char(Number(item) - 1)
+            }
+            variables.add(item)
+            let prev = items[i - 1]
+            let spaces = prev && search(/\n( *).*$/, prev)
+            let value = spaces
+                ? `indentAfterFirstLine(${item}, ${spaces.length})`
+                : item
+            template += wrap(value, ' + ')
+        } else {
+            template += singlequote(
+                escapeNewlinesAndQuotes(item)
+            )
+        }
+    }
+    //const body = 'return ' + dreplace(template, {
+    //'\n': '\\n',
+    //'\'': '\\\'',
+    //'\"': '\\\"',
+    //})
+    const body = 'return ' + template
+    variables = Array.from(variables).sort()
+    let params = variables.map((x, i) => `${x} = ''`)
+
+    if (variables[0] != 'a') {
+        params = `{${params.join(', ')}} = {}`
+    }
+    //console.log(variables)
+    const fn = toStringFunction('lambda', params, body)
+    //console.log(fn); throw "";
+    //console.log([fn])
+    //
+    return bringToLife(fn)
+}
+// 04-18-2022
+
+//s = `
+//$js
+//$foo
+
+//`
+//console.log(templateToFunction(s)({js: 'foo\nbye', foo: 'go'}))
+
+//s = `
+//$4
+//$1
+//$2
+//$3$4
+//`
+//console.log(templateToFunction(s)('abc', 'b\ncddd\ne', 'dd'))
+//console.log(1==2-1==3-2==4-2)
+
+//s = `fish
+//$A
+//gogop howdyhow.sadf.vvc
+//$4
+//$1
+//$2
+//
+//$3$4
+//`
+//console.log((getLines('fish', 3)))
+//console.log(isSimilar(s, 'fish'))
+
+s = `fb(`
+
+function runit(s, evaluater = eval) {
+    let value
+    let count = 0
+    while (++count <= 3) {
+        breaker(3)
+        try {
+            console.log('v')
+            value = evaluater(stringTryWrap(s))
+            console.log('hi')
+        } catch (e) {
+            console.log('unreachable syntax error')
+            console.log(e)
+            return
+        }
+        if (!value) {
+            return true
+            /* true usually means everything is okay */
+            /* however it also means terminate onTick... or to stop something. it usually ends up meaning the case u want it to be. */
+            return console.log('done without errors')
+        }
+        if (value.proposedFixFn) {
+            s = value.proposedFixFn(s)
+            console.log(s)
+        }
+    }
+}
+//runit()
+
+module.exports.isReferenceError = isReferenceError
+module.exports.isSyntaxError = isSyntaxError
+module.exports.doglog = doglog
+module.exports.pairlog = pairlog
+module.exports.dogLogFactory = dogLogFactory
+module.exports.WordToNumberDictionary = WordToNumberDictionary
+module.exports.trace = trace
+module.exports.getFunctionInfo = getFunctionInfo
+module.exports.dog = dog
+module.exports.display = display
+module.exports.noop = noop
+module.exports.isUrl = isUrl
+module.exports.seasons = seasons
+module.exports.StandardObject = StandardObject
+module.exports.isError = isError
+module.exports.isSet = isSet
+module.exports.stringify = stringify
+module.exports.datestamp = datestamp
+module.exports.getHMSM = getHMSM
+module.exports.getMDY = getMDY
+module.exports.isString = isString
+module.exports.isArray = isArray
+module.exports.reduce = reduce
+module.exports.uncomment = uncomment
+module.exports.escapeNewlinesAndQuotes = escapeNewlinesAndQuotes
+module.exports.yes = yes
+module.exports.longShort = longShort
+module.exports.shortLong = shortLong
+module.exports.getLines = getLines
+module.exports.isSimilar = isSimilar
+module.exports.push = push
+module.exports.iterTest = iterTest
+module.exports.hasPeriod = hasPeriod
+module.exports.getFunction = getFunction
+module.exports.argumentGetter = argumentGetter
+module.exports.argumentFiller = argumentFiller
+module.exports.toMilliseconds = toMilliseconds
+module.exports.isAsync = isAsync
+module.exports.partition = partition
+module.exports.getInterestingBindings = getInterestingBindings
+module.exports.hasBracket = hasBracket
+module.exports.throwError = throwError
+module.exports.coinflip = coinflip
+module.exports.isUtf = isUtf
+module.exports.opposite = opposite
+module.exports.CumulativeStorage = CumulativeStorage
+module.exports.addProperty = addProperty
+module.exports.exists = exists
+module.exports.addPropertyLambda2 = addPropertyLambda2
+module.exports.addPropertyLambda3 = addPropertyLambda3
+module.exports.iterRange = iterRange
+module.exports.isPureObject = isPureObject
+module.exports.isThisFunction = isThisFunction
+module.exports.rainbow = rainbow
+module.exports.average = average
+module.exports.Indexed = Indexed
+module.exports.isObject = isObject
+module.exports.type = type
+module.exports.breaker = breaker
+module.exports.isNumber = isNumber
+module.exports.test = test
+module.exports.range = range
+module.exports.isPrimitive = isPrimitive
+module.exports.textTable = textTable
+module.exports.isDoubleIterable = isDoubleIterable
+module.exports.isQuote = isQuote
+module.exports.isStringNumberRange = isStringNumberRange
+module.exports.Tally = Tally
+module.exports.coerceToNullIf = coerceToNullIf
+module.exports.tally = tally
+module.exports.spellcheckFactory = spellcheckFactory
+module.exports.Spellcheck = Spellcheck
+module.exports.simpleSpellcheck = simpleSpellcheck
+module.exports.typist = typist
+module.exports.isNestedArray = isNestedArray
+module.exports.removeEs6 = removeEs6
+module.exports.isLink = isLink
+module.exports.regexElongation = regexElongation
+module.exports.getFunctionName = getFunctionName
+module.exports.isFunction = isFunction
+module.exports.isPlural = isPlural
+module.exports.toSpaces = toSpaces
+module.exports.replace = replace
+module.exports.Watcher = Watcher
+module.exports.isHtmlFile = isHtmlFile
+module.exports.isCssFile = isCssFile
+module.exports.isJavascriptFile = isJavascriptFile
+module.exports.getQuotes = getQuotes
+module.exports.findKeyFactory = findKeyFactory
+module.exports.findKey = findKey
+module.exports.findKeys = findKeys
+module.exports.getShortestLongest = getShortestLongest
+module.exports.getShortest = getShortest
+module.exports.getLongest = getLongest
+module.exports.findCaller = findCaller
+module.exports.hasSymbol = hasSymbol
+module.exports.toArray = toArray
+module.exports.looksLikeRegex = looksLikeRegex
+module.exports.prepareRegex = prepareRegex
+module.exports.wordToNumber = wordToNumber
+module.exports.toStringDictionaryEntry = toStringDictionaryEntry
+module.exports.comment = comment
+module.exports.hasSelector = hasSelector
+module.exports.isUndefined = isUndefined
+module.exports.isSelector = isSelector
+module.exports.boundary = boundary
+module.exports.getVueErrorInfo = getVueErrorInfo
+module.exports.hasSpaces = hasSpaces
+module.exports.isNull = isNull
+module.exports.toStringCallable = toStringCallable
+module.exports.uncapitalize = uncapitalize
+module.exports.insertBelow = insertBelow
+module.exports.linebreak = linebreak
+module.exports.hasNewline = hasNewline
+module.exports.toNumber = toNumber
+module.exports.removeQuotes = removeQuotes
+module.exports.blockComment = blockComment
+module.exports.modularIncrementNumber = modularIncrementNumber
+module.exports.unique = unique
+module.exports.numbered = numbered
+module.exports.getLast = getLast
+module.exports.find = find
+module.exports.matchall = matchall
+module.exports.toggleFunction = toggleFunction
+module.exports.ErrorWatcher = ErrorWatcher
+module.exports.getClassString = getClassString
+module.exports.getClassMethods = getClassMethods
+module.exports.hasSharedKeys = hasSharedKeys
+module.exports.isPublic = isPublic
+module.exports.getClassProperties = getClassProperties
+module.exports.findall = findall
+module.exports.smallify = smallify
+module.exports.deletef = deletef
+module.exports.functiongetter = functiongetter
+module.exports.removeAllComments = removeAllComments
+module.exports.getLastWord = getLastWord
+module.exports.getFirstWord = getFirstWord
+module.exports.getFirst = getFirst
+module.exports.xsplit = xsplit
+module.exports.removeComments = removeComments
+module.exports.search = search
+module.exports.matchgetter = matchgetter
+module.exports.prepareIterable = prepareIterable
+module.exports.indent = indent
+module.exports.joined = joined
+module.exports.getYear = getYear
+module.exports.difference = difference
+module.exports.errorWrap = errorWrap
+module.exports.insertText = insertText
+module.exports.isIterable = isIterable
+module.exports.linegetter = linegetter
+module.exports.isDefined = isDefined
+module.exports.isBoolean = isBoolean
+module.exports.addGFlag = addGFlag
+module.exports.isFirst = isFirst
+module.exports.isWord = isWord
+module.exports.isPromise = isPromise
+module.exports.isJsonParsable = isJsonParsable
+module.exports.isRegExp = isRegExp
+module.exports.isFalse = isFalse
+module.exports.isTrue = isTrue
+module.exports.isClassObject = isClassObject
+module.exports.isClass = isClass
+module.exports.isNode = isNode
+module.exports.isJson = isJson
+module.exports.isElement = isElement
+module.exports.isInteger = isInteger
+module.exports.isPositive = isPositive
+module.exports.isCapitalized = isCapitalized
+module.exports.isYesterday = isYesterday
+module.exports.isDate = isDate
+module.exports.isToday = isToday
+module.exports.zeroPad = zeroPad
+module.exports.backspaced = backspaced
+module.exports.indexgetter = indexgetter
+module.exports.insert = insert
+module.exports.getSpaces = getSpaces
+module.exports.rescape = rescape
+module.exports.replaceTemplaterHelper = replaceTemplaterHelper
+module.exports.spicyReplace = spicyReplace
+module.exports.spicyTemplater = spicyTemplater
+module.exports.reverse = reverse
+module.exports.templater = templater
+module.exports.hasCaptureGroup = hasCaptureGroup
+module.exports.getIndent = getIndent
+module.exports.identity = identity
+module.exports.trimmed = trimmed
+module.exports.AssertionErrorHandler = AssertionErrorHandler
+module.exports.AssertionError = AssertionError
+module.exports.assert = assert
+module.exports.parens = parens
+module.exports.len = len
+module.exports.hasNumber = hasNumber
+module.exports.sum = sum
+module.exports.recursiveFlat = recursiveFlat
+module.exports.flat = flat
+module.exports.doublequote = doublequote
+module.exports.delta = delta
+module.exports.toVariable = toVariable
+module.exports.quotify = quotify
+module.exports.tail = tail
+module.exports.bindObject = bindObject
+module.exports.initializeStateVariable = initializeStateVariable
+module.exports.bind = bind
+module.exports.fparse = fparse
+module.exports.Cache = Cache
+module.exports.getLongestOld = getLongestOld
+module.exports.dreplace = dreplace
+module.exports.ncg = ncg
+module.exports.filterObjectHelper = filterObjectHelper
+module.exports.filter = filter
+module.exports.filterObject = filterObject
+module.exports.filtered = filtered
+module.exports.getIndentAndLine = getIndentAndLine
+module.exports.capitalize = capitalize
+module.exports.singlequote = singlequote
+module.exports.ftest = ftest
+module.exports.mapObject = mapObject
+module.exports.mapConditional = mapConditional
+module.exports.merge = merge
+module.exports.mergeAll = mergeAll
+module.exports.tryval = tryval
+module.exports.shuffle = shuffle
+module.exports.Clock = Clock
+module.exports.addExtension = addExtension
+module.exports.getExtension = getExtension
+module.exports.sorted = sorted
+module.exports.n2char = n2char
+module.exports.char2n = char2n
+module.exports.newlineIndent = newlineIndent
+module.exports.Storage = Storage
+module.exports.modularIncrement = modularIncrement
+module.exports.modularIncrementFn = modularIncrementFn
+module.exports.mreplace = mreplace
+module.exports.sleep = sleep
+module.exports.parseJSON = parseJSON
+module.exports.splitonce = splitonce
+module.exports.pop = pop
+module.exports.fill = fill
+module.exports.splitOnceReverse = splitOnceReverse
+module.exports.split = split
+module.exports.regexed = regexed
+module.exports.paired = paired
+module.exports.toUpperCase = toUpperCase
+module.exports.depluralize = depluralize
+module.exports.intersection = intersection
+module.exports.shared = shared
+module.exports.changeDate = changeDate
+module.exports.sortByDependencies = sortByDependencies
+module.exports.copy = copy
+module.exports.toDashCase = toDashCase
+module.exports.toSnakeCase = toSnakeCase
+module.exports.toStringObject = toStringObject
+module.exports.toArgument = toArgument
+module.exports.toString = toString
+module.exports.toAttr = toAttr
+module.exports.toPascal = toPascal
+module.exports.toCamelCase = toCamelCase
+module.exports.toggleVue = toggleVue
+module.exports.toggle = toggle
+module.exports.toDictionary = toDictionary
+module.exports.toLiteralArray = toLiteralArray
+module.exports.toInteger = toInteger
+module.exports.roygbiv = roygbiv
+module.exports.numberToWord = numberToWord
+module.exports.numberWords = numberWords
+module.exports.hasComma = hasComma
+module.exports.hasLetter = hasLetter
+module.exports.hasWord = hasWord
+module.exports.hasLookBehind = hasLookBehind
+module.exports.hasLookAround = hasLookAround
+module.exports.endsWithWord = endsWithWord
+module.exports.endsWithNumber = endsWithNumber
+module.exports.stringcall = stringcall
+module.exports.dedent = dedent
+module.exports.getWords = getWords
+module.exports.zip = zip
+module.exports.cartesianProduct = cartesianProduct
+module.exports.curry = curry
+module.exports.force = force
+module.exports.isStorage = isStorage
+module.exports.isNewLine = isNewLine
+module.exports.colorToHex = colorToHex
+module.exports.iter = iter
+module.exports.StringMixins = StringMixins
+module.exports.mixin = mixin
+module.exports.Eater = Eater
+module.exports.notNull = notNull
+module.exports.trimSpaces = trimSpaces
+module.exports.Matrix = Matrix
+module.exports.getStrings = getStrings
+module.exports.normalizeSpaces = normalizeSpaces
+module.exports.partial = partial
+module.exports.toStringArgument = toStringArgument
+module.exports.splitmapfilter = splitmapfilter
+module.exports.splitMapJoin = splitMapJoin
+module.exports.argsplit = argsplit
+module.exports.isOnlyWords = isOnlyWords
+module.exports.warn = warn
+module.exports.getSingleAndDoubleAttrs = getSingleAndDoubleAttrs
+module.exports.getOptions = getOptions
+module.exports.aggregate = aggregate
+module.exports.pipe = pipe
+module.exports.createError = createError
+module.exports.replaceFromIndex = replaceFromIndex
+module.exports.freplace = freplace
+module.exports.Table = Table
+module.exports.evaluate = evaluate
+module.exports.regexgetter = regexgetter
+module.exports.hasGFlag = hasGFlag
+module.exports.regexStartsWithSpaces = regexStartsWithSpaces
+module.exports.inferlang = inferlang
+module.exports.isAllCaps = isAllCaps
+module.exports.abbreviate = abbreviate
+module.exports.toabrev = toabrev
+module.exports.TextTokenizer = TextTokenizer
+module.exports.getFunctionNames = getFunctionNames
+module.exports.removeSpaces = removeSpaces
+module.exports.spaceToCamel = spaceToCamel
+module.exports.listgetter = listgetter
+module.exports.spaceToSnake = spaceToSnake
+module.exports.createConfig = createConfig
+module.exports.jspy = jspy
+module.exports.curryStart = curryStart
+module.exports.stateCurryEnd = stateCurryEnd
+module.exports.stateCurryStart = stateCurryStart
+module.exports.curryEnd = curryEnd
+module.exports.timestamp = timestamp
+module.exports.wordCount = wordCount
+module.exports.exporter = exporter
+module.exports.stateTrace = stateTrace
+module.exports.CodeLibrary = CodeLibrary
+module.exports.getfunctions = getfunctions
+module.exports.mapfilter = mapfilter
+module.exports.foo = foo
+module.exports.getParameters = getParameters
+module.exports.scopedEval = scopedEval
+module.exports.timegetter = timegetter
+module.exports.getErrorInfo = getErrorInfo
+module.exports.getDetailedErrorInfo = getDetailedErrorInfo
+module.exports.ItemIter = ItemIter
+module.exports.forEach = forEach
+module.exports.getCaller = getCaller
+module.exports.WbooError = WbooError
+module.exports.completer = completer
+module.exports.owalker = owalker
+module.exports.vars = vars
+module.exports.trywrap = trywrap
+module.exports.stringIIFEWrap = stringIIFEWrap
+module.exports.stringTryWrap = stringTryWrap
+module.exports.getLoggableProperties = getLoggableProperties
+module.exports.veval = veval
+module.exports.removeStrings = removeStrings
+module.exports.addf = addf
+module.exports.lineCount = lineCount
+module.exports.saybye = saybye
+module.exports.sayhi = sayhi
+module.exports.captureRegex = captureRegex
+module.exports.splitLast = splitLast
+module.exports.replaceLast = replaceLast
+module.exports.bringToLife = bringToLife
+module.exports.addDeepKey = addDeepKey
+module.exports.collectObjectFromString = collectObjectFromString
+module.exports.looksLikeProse = looksLikeProse
+module.exports.splitKatex = splitKatex
+module.exports.hasLatex = hasLatex
+module.exports.getFirstParameter = getFirstParameter
+module.exports.isStandardHtml = isStandardHtml
+module.exports.isCssSymbol = isCssSymbol
+module.exports.fixSelector = fixSelector
+module.exports.fixUrl = fixUrl
+module.exports.isSymbol = isSymbol
+module.exports.consoleThrow = consoleThrow
+module.exports.getChunks = getChunks
+module.exports.pluralize = pluralize
+module.exports.findallStrings = findallStrings
+module.exports.isStandardCss = isStandardCss
+module.exports.reduceToString = reduceToString
+module.exports.join = join
+module.exports.wrap = wrap
+module.exports.hasOwn = hasOwn
+module.exports.startsWithSymbol = startsWithSymbol
+module.exports.splitOnceSymbolOrWord = splitOnceSymbolOrWord
+module.exports.IndexError = IndexError
+module.exports.mergeProps = mergeProps
+module.exports.mergeFunction = mergeFunction
+module.exports.compose = compose
+module.exports.coerceToArray = coerceToArray
+module.exports.coerceToString = coerceToString
+module.exports.coerceToNumber = coerceToNumber
+module.exports.startsWithPeriod = startsWithPeriod
+module.exports.splitOptionalComma = splitOptionalComma
+module.exports.brackify = brackify
+module.exports.hasColon = hasColon
+module.exports.hasDash = hasDash
+module.exports.getFirstLine = getFirstLine
+module.exports.removeStartingSpaces = removeStartingSpaces
+module.exports.toFunctionRegex = toFunctionRegex
+module.exports.getSpacesFromOffset = getSpacesFromOffset
+module.exports.countParentheses = countParentheses
+module.exports.countCaptureGroups = countCaptureGroups
+module.exports.getLastLine = getLastLine
+module.exports.splitThePage = splitThePage
+module.exports.iterSearch = iterSearch
+module.exports.itersearch = itersearch
+module.exports.findError = findError
+module.exports.hasCamelCase = hasCamelCase
+module.exports.lbreplace = lbreplace
+module.exports.sreplace = sreplace
+module.exports.toRequireString = toRequireString
+module.exports.removeFunctionPrefix = removeFunctionPrefix
+module.exports.removeExtension = removeExtension
+module.exports.getStackInfo = getStackInfo
+module.exports.getStackTrace = getStackTrace
+module.exports.htmlify = htmlify
+module.exports.isCss = isCss
+module.exports.IndexedMap = IndexedMap
+module.exports.isSingleCssProperty = isSingleCssProperty
+module.exports.smartDedent = smartDedent
+module.exports.hasHtml = hasHtml
+module.exports.Iter = Iter
+module.exports.LineEdit = LineEdit
+module.exports.isEnterBlock = isEnterBlock
+module.exports.fixSpaceLength = fixSpaceLength
+module.exports.isHtml = isHtml
+module.exports.isHtmlAttr = isHtmlAttr
+module.exports.EventEmitter = EventEmitter
+module.exports.testf = testf
+module.exports.vmap = vmap
+module.exports.atFirst = atFirst
+module.exports.atSecond = atSecond
+module.exports.logger = logger
+module.exports.run = run
+module.exports.IncrementalBuilder = IncrementalBuilder
+module.exports.getUniqueLetters = getUniqueLetters
+module.exports.isAllEqual = isAllEqual
+module.exports.fillTo = fillTo
+module.exports.Builder = Builder
+module.exports.getVariablesFromString = getVariablesFromString
+module.exports.toStringFunction = toStringFunction
+module.exports.checkjs = checkjs
+module.exports.toAbbreviationRegex = toAbbreviationRegex
+module.exports.expensiveFuzzyMatch = expensiveFuzzyMatch
+module.exports.fuzzyMatch = fuzzyMatch
+module.exports.isAllSingleWords = isAllSingleWords
+module.exports.startsWithSingleWord = startsWithSingleWord
+module.exports.count = count
+module.exports.isLogicFunction = isLogicFunction
+module.exports.isGetFunction = isGetFunction
+module.exports.sortByOccurence = sortByOccurence
+module.exports.toVimVariable = toVimVariable
+module.exports.toConfig = toConfig
+module.exports.toVimDict = toVimDict
+module.exports.splitparsef = splitparsef
+module.exports.splitCamelCase = splitCamelCase
+module.exports.mergeSingleLetters = mergeSingleLetters
+module.exports.fixPath = fixPath
+module.exports.once = once
+module.exports.seen = seen
+module.exports.FunctionBuilder = FunctionBuilder
+module.exports.splitNumberBoundary = splitNumberBoundary
+module.exports.functionProxy = functionProxy
+module.exports.isStorageSchema = isStorageSchema
+module.exports.toStorageSchema = toStorageSchema
+module.exports.getModuleExports = getModuleExports
+module.exports.catpics = catpics
+module.exports.regexTemplater = regexTemplater
+module.exports.dynamicGetterSetter = dynamicGetterSetter
+module.exports.hasReturnValue = hasReturnValue
+module.exports.defineFunctionProperty = defineFunctionProperty
+module.exports.defineProperty = defineProperty
+module.exports.toArrayOrObjectList = toArrayOrObjectList
+module.exports.isEven = isEven
+module.exports.isOdd = isOdd
+module.exports.divify = divify
+module.exports.removeSymbols = removeSymbols
+module.exports.edit = edit
+module.exports.isWordy = isWordy
+module.exports.walk = walk
+module.exports.allowIgnoreFilterFactory =
+    allowIgnoreFilterFactory
+module.exports.toHtmlRegex = toHtmlRegex
+module.exports.removeHtmlComments = removeHtmlComments
+module.exports.stop = stop
+module.exports.assignAliases = assignAliases
+module.exports.assignFresh = assignFresh
+module.exports.assignExisting = assignExisting
+module.exports.rng = rng
+module.exports.randomPick = randomPick
+module.exports.onceFactory = onceFactory
+module.exports.getIndexesOf = getIndexesOf
+module.exports.schemaMatch = schemaMatch
+module.exports.MathRearrangement = MathRearrangement
+module.exports.getOptionsFromSchema = getOptionsFromSchema
+module.exports.defineAliases = defineAliases
+module.exports.KVStorage = KVStorage
+module.exports.letterRange = letterRange
+module.exports.partitionLetterGroups = partitionLetterGroups
+module.exports.recursiveDataBuilder = recursiveDataBuilder
+module.exports.debounce = debounce
+module.exports.Breaker = Breaker
+module.exports.BreakerFactory = BreakerFactory
+module.exports.getAndGetAgain = getAndGetAgain
+module.exports.tryAndTryAgain = tryAndTryAgain
+module.exports.buildFileRelations = buildFileRelations
+module.exports.superb = superb
+module.exports.gatherArgs = gatherArgs
+module.exports.assertion = assertion
+module.exports.actions = actions
+module.exports.optiongetter = optiongetter
+module.exports.waterfall = waterfall
+module.exports.incrementName = incrementName
+module.exports.defineVariable = defineVariable
+module.exports.datemark04082022 = datemark04082022
+module.exports.getThis = getThis
+module.exports.boo = boo
+module.exports.standards = standards
+module.exports.lineNeedsEndingColon = lineNeedsEndingColon
+module.exports.infuseVue = infuseVue
+module.exports.infuseSpanColors = infuseSpanColors
+module.exports.spanify = spanify
+module.exports.validArgs = validArgs
+module.exports.schemaRegexFactory = schemaRegexFactory
+module.exports.removeThis = removeThis
+module.exports.bindObjectToState = bindObjectToState
+module.exports.bringFunctionsToLife = bringFunctionsToLife
+module.exports.schemaReplace = schemaReplace
+module.exports.xveryMagicLogicHandler = xveryMagicLogicHandler
+module.exports.xnothingInfront = xnothingInfront
+module.exports.defineEmitProperty = defineEmitProperty
+module.exports.endsWithParentheses = endsWithParentheses
+module.exports.lengthDelta = lengthDelta
+module.exports.indentAfterFirstLine = indentAfterFirstLine
+module.exports.templateToFunction = templateToFunction
+module.exports.runit = runit
+
+module.exports.mergeProperty = mergeProperty
+//console.log(getLines('hi\nbye', 0, 1))
+module.exports.mergeOnTop = mergeOnTop
+
+function rigidCompareFactory(preset, transform = identity) {
+    return function compare1(x) {
+        const value = preset.indexOf(transform(x))
+        return value > -1 ? value : preset.length + 1
+    }
+}
+function sortHtmlAttrs(items) {
+    const preset = ['v-for', 'v-if', 'v-show']
+    const compare1 = rigidCompareFactory(preset, onFirst)
+    const compare2 = (x) => x.join('').length
+    return multiSort(items, compare1, compare2)
+}
+function rigidSort(items, preset, transform) {
+    const compare1 = rigidCompareFactory(preset, transform)
+    return multiSort(items, compare1)
+}
+function multiSort(items, ...criteria) {
+    if (getLast(criteria) != identity) criteria.push(identity)
+
+    const sort = (a, b) => {
+        for (let i = 0; i < criteria.length; i++) {
+            const fn = criteria[i]
+            const A = fn(a)
+            const B = fn(b)
+
+            let value
+            if (isNumber(A)) {
+                value = Number(A) - Number(B)
+            } else if (isString(A)) {
+                value = charPointScore(A) - charPointScore(B)
+            }
+            if (value) return value
+        }
+        return 0
+    }
+    return items.sort(sort)
+}
+
+//arr=['a', 'fd', 'c', 'd', 'e']
+//rigidSort(arr, ['d', 'e'])
+//console.log(arr)
+function charPointScore(s) {
+    let score = 0
+    for (let i = 0; i < s.length; i++) {
+        let c = s.codePointAt(i)
+        score += c * Math.pow(10, -2 * i)
+    }
+    return score
+}
+//charPointScore('AZ')
+//charPointScore('AZz')
+module.exports.mapfilter = mapfilter
+module.exports.multiSort = multiSort
+module.exports.rigidCompareFactory = rigidCompareFactory
+module.exports.getSecondWord = getSecondWord
+//console.log(shortLong(3,1))
+//console.log(range(1,4))
+//value = mreplace(/^ *hi$/m, 'abc\nhi\nb')
+//console.log('b' - 'a')
+//console.log(splitSpellcheck('  b c a', {a:1, b:2, c:3}))
+
+//console.log(stringify({a:1, b:2, c:3} ))
+
+//food = new Storage()
+//bood = new Storage()
+//food.add('k', 's')
+//food.add('k', bood)
+//bood.add(food)
+//console.log(stringify({a: {a:[test], b:2, c:food}, b:2, c:3}))
+// doc recursive json stringing
+//console.log(functionStringBirth(new Storage()))
+//console.log({a:1}.constructor.name)
+//console.log(new Storage().constructor.name)
+//seeInfo(Promise)
+
+function isStringClass(s) {
+    return test(/^class/, s)
+}
+
+function isStringFunction(s) {
+    return test(
+        /^(?:async )?(?:.*?=>|function|class|\w+\(.*?{)/,
+        s
+    )
+}
+
+function isStringObjectFunction(s) {
+    return test(/^(?:async )?\w+\(.*?{/, s)
+}
+function isStringLambdaFunction(s) {
+    return test(/^(?:async )?.*?=>/, s)
+}
+
+function functionStringRevive(k, v) {
+    if (isStringFunction(v)) {
+        return bringFunctionToLife(v)
+    }
+    return v
+}
+
+//class Foo {
+//constructor() {
+//}
+//s() {
+//console.log('hi')
+//}
+//}
+//x=functionStringBirth({
+//v: Foo.toString(),
+//async de() {
+//await sleep(1000)
+//return 'b'
+//},
+//ce: async x => 'hi',
+//})
+
+//console.log(x)
+//s = JSON.parse(x)
+//g=new s.v()
+//console.log(g.s())
+//t=functionStringBirth(s)
+//console.log(s)
+//console.log(t)
+//async function foo() {
+//v=await s.ce()
+//console.log(v)
+//}
+//foo()
+
+//x= {
+//a: [(x) => (y) => console.log(x, y)]
+//}
+//console.log(x)
+//y=functionStringBirth(x)
+//z=JSON.parse(y, functionStringRevive)
+//console.log(z)
+//z.a(1)(2)
+
+function magicComplete(line, upline, state) {
+    let baseWords = line.match(/\w+/g)
+    // ways to map the state
+    // calenderTracker
+
+    function ifMagic(args, line, upline) {
+        let words = upline.match(/\w+/g)
+        let targets = args.map((x) => words[x - 1])
+
+        // count the targets
+        return pairs.map((item, i) => {
+            let value = dreplace(upline, [targets, item])
+            return value
+        })
+    }
+    const ref = {
+        if: ifMagic,
+        ef: ifMagic,
+    }
+
+    upline = "if (key == 'a') left = 1"
+    line = 'w up d right s down Escape escape Enter enter'
+    magicArgs = '$3 $4'
+    let words = upline.match(/\w+/g)
+    if (!words) return
+    let runner = ref[words[0]]
+    let value = runner(magicArgs, line, upline)
+    console.log(words)
+    // sprawl to the upline
+    // return
+}
+
+//console.log(getLongest({a:'xxx', b: 'vv'}))
+//magicComplete()
+
+
+//const x = {
+//a() {
+//x.depth += 1
+//this.depth -= 1
+//return x
+//},
+//depth: 0
+//}
+//console.log(x.a().a().a())
+
+class InfiniteStorage {
+    ccumulative(ref, key, value) {
+        const current = ref[key]
+        if (isArray(current)) {
+            ref[key] = push(current, value, 1)
+        } else if (current !== value)
+            ref[key] = [current, value]
+    }
+    set(...keys) {
+        let ref = this
+        for (let i = 0; i < keys.length - 1; i++) {
+            let key = keys[i]
+            if (i == keys.length - 2) {
+                if (
+                    this.cumulative &&
+                    ref.hasOwnProperty(key)
+                ) {
+                    this.cumulative(ref, key, keys[i + 1])
+                } else {
+                    ref[key] = keys[i + 1]
+                }
+                break
+            }
+
+            if (!ref.hasOwnProperty(key)) {
+                ref[key] = {}
+            }
+
+            if (isObject(ref[key])) {
+                ref = ref[key]
+            }
+        }
+    }
+}
+
+//z=new InfiniteStorage()
+//z.set('a')
+//z.set('a', 'b', 'c')
+//z.set('a', 'b', 'd')
+//z.set('a', 'b', 'e')
+//z.set('b', 'b', 'b')
+//console.log(z.a.b)
+//z.set('a', 'b', 'd')
+//console.log(z.a.b)
+
+//const x = {
+//x() {
+//const value = Math.random() > 0.99 ? 1 : x
+//if (value == x) {
+//return x.x()
+//} else {
+//return value
+//}
+//}
+//}
+//console.log(x.x())
+//after running this function 100 times, what is the probability of returning a value of 1?
+
+//console.log(countParameters('(x) => hi'))
+//s='(x) => "HI"'
+//console.log(bringToLife(s)())
+
+//console.log(rigidSort(['z', 'b', 'c', 'd', 'e'], ['b', 'd']))
+
+//console.log(/\n/.toString().includes('\\n'))
+//console.log(test(RegExp('\\n'), '\n'))
+
+function getParenOffset(s) {
+    const value = search(/[\'\"\)}\]]*$/, s)
+    return (value && value.length) || 0
+}
+//console.log(getParenOffset('foo" ")))'))
+module.exports.isObject = isObject
+module.exports.isObjectLiteral = isObjectLiteral
+module.exports.conditional = conditional
+
+//console.log(walk(new Storage, console.log))
+//console.log(walk(new Storage, puppetVisitor))
+
+//x=['a', 'b', 'c', 'd', 'e']
+//console.log(modularIncrement(x, 'a', -1))
+
+
+//args = "A"
+//console.log(walk(args, puppetVisitor))
+//the depth is improtant
+
+nestedobj = {a:1, b:2, c: {a:1, b:22, D:{a:1, b:2, ccc:33} }}
+
+function walker(value, depth, key) {
+    return key + "HI"
+}
+function objectWalk(o) {
+    let lastKeys = []
+
+    function runner(x) {
+        for (let [k, v] of Object.entries(x)) {
+            if (isObject(v)) {
+                lastKeys.push(k)
+                runner(v)
+            }
+            else {
+                //console.log(...lastKeys)
+                //store.push(lastKeys.concat(v).join('-'))
+            }
+        }
+    }
+    runner(o)
+}
+//objectWalk(nestedobj)
+
+
+//const a = {
+    //b, c, d, e, f
+//}
+//const b = 1
+//let   c = 1
+//var   d = 1
+//function e() {
+    //return
+//}
+// playing with variable scope
+// testpoint
+
+
+function visitor() {
+    
+}
+    //console.log(readableProperties(new Storage()))
+    //console.log(Object.entries(new Storage))
+//console.log(puppetVisitorDeep(new Storage))
+
+//console.log(Math.max(2, 3))
+
+function jshintErrorInfo(s) {
+    return jshint(s).errors.slice(0, -1).filter((x) => {
+        return x.code.startsWith('E')
+    }).map((item, i) => {
+        return {
+            line: item.line,
+            ch: item.character,
+            reason: item.reason,
+            code: item.code,
+            evidence: item.evidence
+        }
+    })
+}
+function evaluate(s) {
+    try {
+        const success = eval(s) || true
+        return { success }
+    } catch(e) {
+        console.log(e.stack)
+        const error = getErrorInfo(e) || prettierErrorInfo(s) || jshintErrorInfo(s)
+        return { error }
+    }
+}
+
+s = `  console.log(' bye)`
+//console.log(evaluate(s))
+
+
+//x = {
+    //a: ['a', 'b', 'c', 'd', 'e']
+//}
+//pop(x.a, 'a')
+//pop(x.a, 'b')
+//console.log(x)
+
+
+//x = {
+    //a: ['a', 'b', 'c']
+    //d: 'e'
+//}
+//console.log(mergeOnTop(x, {a: ['c', 'd', 'e'], d: 'f'}))
+//ex merge
+//
+//
+//
+//
+
+
+//promises
+//function promiser(value, i) {
+    //let delay = 1000
+    //return new Promise((resolve) => {
+        //setTimeout(() => resolve(value), delay)
+    //})
+//}
+//const promises = [1,2,3].map(promiser)
+//Promise.all(promises).then(console.log)
+
+function wrapFactory(before, after) {
+    if (!after) after = before
+    return function lambda(fn) {
+        if (isAsync(fn)) {
+            return async function lambda(...args) {
+                const beforeValue = before()
+                console.log('before', beforeValue)
+                const value = await fn(...args)
+                const afterValue = after()
+                console.log('after', afterValue)
+                return value
+            }
+        }
+        else {
+            return function lambda(...args) {
+                before()
+                const value = fn(...args)
+                after()
+                return value
+            }
+        }
+    }
+}
+
+
+//console.log(timestamp(new Date("2011-06-20T11:34:15Z")))
+
+
+//console.log = display
+//an async clock listener
+//async function fo() {
+//const value = await Clock.input((count) => {
+    //if (count == 3) return 'xxx'
+//})
+//return value
+//}
+//wrapFactory(timestamp)(fo)().then(console.log)
+
+
+//console.log(typist("cm a spc"))
+
+
+
+module.exports.announceError = announceError
+
+//console.log(fuzzyMatch('c', ['abDe', 'ade.a.b', 'c', 'd', 'ae']))
+
+function codeWords(s) {
+    let words = s.match(/[a-zA-Z][\w.]{6,}/g)
+    if (!words) return 
+    let ignore = ['function']
+    words = unique(words, ignore)
+    return words
+}
+
+function bigWords(s) {
+    return unique(findall(/[\w.]{10,}/g, s))
+}
+function onFirst(fn) {
+    if (isFunction(fn)) {
+        return function lambda(k, v) {
+            return fn(k)
+        }
+    }
+    if (isArray(fn)) {
+        return fn[0]
+    }
+}
+
+function onlyFirst(fn) {
+    return (x, i) => i == 0 ? fn(x) : x
+}
+
+
+function onlySecond(fn) {
+    return (x, i) => i == 1 ? fn(x) : x
+}
+
+function onSecond(fn) {
+    if (isFunction(fn)) {
+        return function lambda(k, v) {
+            return fn(k)
+        }
+    }
+    if (isArray(fn)) {
+        return fn[1]
+    }
+}
+
+
+function getLongestDollar(s) {
+    return getLongest((s.match(/\$\d+/g)||[]).map((item, i) => {
+        return Number(item.slice(1))
+    }))
+}
+//console.log(modularIncrement(['a', 'b', 'c', 'd', 'e'], 'b'))
+//
+//
+
+
+function forRunner(name, singles, doubles) {
+    let output = ''
+    let child = forIterationArg(name)
+    output += `<ul class="${name}-container">`
+    output += newlineIndent('hi')
+    output += '<ul>'
+    return output
+}
+
+function doubleReplace(s, regex, childRegex, fn) {
+    //console.log(childRegex)
+    return s.replace(regex, (_, x, offset) => {
+        return _.replace(x, x.replace(childRegex, fn)).replace(/  +/g, ' ')
+    })
+}
+function htmlLineFix(s) {
+    // to have an original ref
+    //
+    function fixer(s, lineRef) {
+        if (test(/=/, s)) {
+            let [a,b] = s.split(/ *= */)
+            return (vmap[a] || a) + `="${b}"`
+        }
+        throw 'not done yet'
+    }
+    return doubleReplace(s, /<\w+ (.*?)>/, /\w+ *= *\w+/g, fixer)
+    ///\w+ *= *\w+| \w+(?= \w)|^\w+(?= \w)|\w+$/g, fixer)
+}
+function htmlLineParser(s) {
+    let ref = {
+        
+    }
+
+    if (/^\w\S+$/.test(s)) {
+        const className = s.replace(/\W/g, '')
+        return buildCloser2('div', {className}, s)
+    }
+
+    let iter = new Iter(split(s, ' '))
+    let tag = 'div'
+    let id = ''
+    let text = ''
+    let classNames = []
+    let dataAttributes = []
+
+    while (iter.next()) {
+        let value = iter.value
+        if (iter.index == 1 && HTMLTAGS.includes(value)) {
+            tag = value
+        }
+        else if (value.startsWith('.')) {
+            classNames.push(value.slice(1))
+        }
+        else if (value.startsWith('#')) {
+            id = value.slice(1)
+        }
+
+        else if (value.includes('=')) {
+            let [a,b] = split(value, '=')
+            dataAttributes.push(`data-${a}="${b}"`)
+        }
+        else if (value in ref) {
+            const args = [classNames[0]]
+            ref[value](...args)
+        }
+        else {
+            text = iter.items.slice(iter.index - 1).join(' ')
+            break
+        }
+    }
+
+    const attrs = {
+        classNames,
+        dataAttributes,
+        id,
+    }
+
+    return buildCloser2(tag, attrs, text)
+}
+
+function vueLineParser2(s) {
+
+    if (/^\w\S+$/.test(s)) {
+        const className = s.replace(/[^\w-]/g, '')
+        return buildCloser2('div', {className}, vueText(s))
+    }
+
+    let items = findall(/(\S+?) *= *(\S+)|(\w+)/g, s)
+        .map((x) => x.filter((x) => x))
+
+    for (let item of items) {
+        //isArray(item) ? vueAttrParser(item) : vueItemParser(item)
+    }
+
+    //if (a in vueKnown) {
+        //a = vueKnown[a]
+    //}
+
+    console.log(items); throw ''
+    let iter = new Iter(items)
+    let tag = 'div'
+    let id = ''
+    let text = ''
+    let classNames = []
+    let dataAttributes = []
+
+    while (iter.next()) {
+        let value = iter.value
+        if (iter.index == 1 && HTMLTAGS.includes(value)) {
+            tag = value
+        }
+        else if (value.startsWith('.')) {
+            classNames.push(value.slice(1))
+        }
+        else if (value.startsWith('#')) {
+            id = value.slice(1)
+        }
+
+        else if (value.includes('=')) {
+            let [a,b] = split(value, '=')
+            dataAttributes.push(`data-${a}="${b}"`)
+        }
+        else if (value in ref) {
+            const args = [classNames[0]]
+            ref[value](...args)
+        }
+        else {
+            text = iter.items.slice(iter.index - 1).join(' ')
+            break
+        }
+    }
+
+    const attrs = {
+        classNames,
+        dataAttributes,
+        id,
+    }
+
+    return buildCloser2(tag, attrs, text)
+}
+function buildCloser2(tag, attrs, text) {
+    //console.log(arguments)
+    const A = toOpeningTag2(tag, attrs)
+    const B = toClosingTag(tag)
+    if (text) {
+        return A + text + B + '\n$c'
+    } else {
+        return A + TABINPUT + B
+    }
+}
+function toOpeningTag2(tag, attrs) {
+    let s = ''
+    let spaces = ' '
+    for (let [k, v] of Object.entries(attrs)) {
+        if (!exists(v)) {
+            continue
+        }
+        s += spaces
+        if (k == 'classNames') {
+          s += attrEntry('class', v.join(' '))
+        }
+        else if (k == 'class' || k == 'className') {
+          s += attrEntry('class', v)
+        }
+
+        else if (k == 'dataAttributes') {
+            s += v.join(' ')
+        }
+        else {
+            s += attrEntry(k, v)
+        }
+    }
+
+    //if (s) {
+        //s = ' ' + s
+    //}
+
+    const suffix = hasHtmlSuffix(tag) ? '>' : '/>'
+    return '<' + tag + s + suffix
+}
+function vueLineParser(s) {
+    if (test(/^v\w+$/, s)) {
+        const target = s.slice(1)
+        return `<div class=${target}>{{${target}}}</div>`
+    }
+
+    let [line, text] = /\[/.test(s) ?
+        mreplace(/\[(.*?)\]/, s) :
+        /v \w/.test(s) ? 
+        s.split(/ *v +/).map(onlySecond(vueText)) : 
+        /\|/.test(s) ?
+        s.split(/ *\| */) :
+        [s, '']
+
+    //console.log([line, text])
+    let [singles, doubles] = getSingleAndDoubleAttrs(line)
+    let first = singles.shift()
+    let [item, symbol] = mreplace(/^[.!@#]/, first)
+
+    let className = ''
+    let tag = 'div'
+    let isClosing = false
+    let isComponent = false
+    let attrs = []
+    let originalItem = item
+    let isFor = false
+ 
+    if (isStandardHtml(item)) {
+        tag = item
+        for (let i = 0; i < singles.length; i++) {
+            let single = singles[i]
+            if (single.startsWith('.')) {
+                className += ' ' + single.slice(1)
+            } else {
+                text = singles.slice(i).join(' ')
+                singles = []
+                break
+            }
+        }
+    }
+
+    else if (item == 'for') {
+        isFor = true
+        className = singles.shift()
+    } else if (symbol == '#' || item.includes('-')) {
+        //tag = item + '-component'
+        className = item
+        tag = item
+        isComponent = true
+    } else if (symbol == '.') {
+        className = item
+    }
+    else if (test(/^\w+\.\w+$/, item)) {
+        className = toDashCase(item)
+        text = vueText(item)
+    } else if (item) {
+        className = item
+    }
+    for (let [attr, val] of doubles) {
+        if (attr == 'html') {
+            attrs.push(vueHelper(attr, val))
+            isClosing = true
+            continue
+        }
+        if (attr == 'class') {
+            if (!className.includes(val)) className += ' ' + val
+            continue
+        }
+
+        if (attr.startsWith(':')) {
+            attrs.push([attr, val])
+            continue
+        }
+
+        if (attr == 'key') {
+            attrs.push([':key', val])
+            continue
+        }
+
+        if (attr == 'show') {
+            if (!test(/^(show|is)/, val) && !val.includes('.')) {
+                val = 'show' + capitalize(val)
+            }
+            attrs.push(['v-show', val])
+            continue
+        }
+
+        if (attr == 'for') {
+            const b = depluralize(val)
+            const c = pluralize(val)
+            const stuff = `(${b}, index) in ${c}`
+
+            if (isComponent) {
+                attrs.push([':' + b, b])
+
+                if (!attrs.find((x) => x[0] == ':key')) {
+                    attrs.push([':key', 'index'])
+                }
+            }
+
+            attrs.push(['v-for', stuff])
+            continue
+        }
+        if (attr.startsWith('v')) {
+            attr = attr.replace(/^v(?=\w)/, 'v-')
+            attrs.push([attr, val])
+            continue
+        }
+
+        if (vmap[attr]) {
+            attr = vmap[attr]
+            attrs.push([attr, val])
+            continue
+        }
+
+        if (true) {
+            attr = ':' + attr
+            attrs.push([attr, val])
+            continue
+        }
+    }
+
+    for (let attr of singles) {
+        if (attr in knownAttrs) {
+            attrs.push(vueHelper(attr))
+            continue
+        }
+        if (attr == 'html') {
+            attrs.push(vueHelper(attr, originalItem))
+            isClosing = true
+            continue
+        }
+
+        if (attr == 'click') {
+            attrs.push(vueHelper(attr, originalItem))
+            continue
+        }
+
+        if (attr == 'vt' || attr == 'text' || attr == 'v') {
+            if (text) text = vueText(text)
+            else {
+                text = vueText(originalItem)
+            }
+            tag = 'p'
+            continue
+        }
+
+        if (attr.startsWith('@')) {
+            if (attr == '@') {
+                attrs.push([
+                    '@' + toDashCase(originalItem),
+                    toCamelCase('on' + capitalize(originalItem)),
+                ])
+                continue
+            }
+
+            let val = attr.slice(1)
+            let value = toCamelCase(
+                val.startsWith('on') ? val : 'on' + capitalize(val)
+            )
+            attrs.push(['@' + toDashCase(val), value])
+            continue
+        }
+        if (attr.startsWith('.')) {
+            let name = attr.slice(1)
+            if (!className.includes(name)) className += ' ' + name
+            continue
+        }
+
+        if (attr == 'style') {
+            attrs.push([
+                ':style',
+                `computed${capitalize(originalItem)}Style`,
+            ])
+            continue
+        }
+
+        if (attr == 'show' || attr == 'if') {
+            attrs.push(vueHelper(attr, originalItem))
+            continue
+        }
+
+        if (attr == 'for') {
+            const a = getFirstWord(originalItem.toLowerCase())
+            const b = depluralize(a)
+            const c = pluralize(a)
+            const stuff = `(${b}, index) in ${c}`
+            attrs.push(['v-for', stuff])
+            continue
+        }
+
+        if (attr == 'ref') {
+            attrs.push(['ref', toCamelCase(originalItem)])
+            continue
+        }
+
+        if (attr.startsWith('v')) {
+            attr = attr.replace(/^v(?=\w)/, 'v-')
+            attrs.push([attr, getFirstWord(originalItem)])
+            continue
+        }
+
+        if (attr) {
+            if (test(/^:/, attr)) {
+                console.log('dont do this')
+                attrs.push([attr, attr.slice(1)])
+            }
+            else {
+                attrs.push([':' + toDashCase(attr), attr])
+            }
+            continue
+        }
+    }
+
+    if (className) {
+        className = fixClassName(className)
+        attrs.push(['class', className])
+    }
+    //if (isComponent) {
+        //tag = className.match(/\S+/)[0]
+    //}
+
+    if (!isClosing) isClosing = !!(text || isComponent)
+    sortHtmlAttrs(attrs)
+
+    const args = [
+        tag,
+        attrs,
+        text,
+        isComponent,
+        isClosing,
+    ]
+
+    //console.log(args)
+    return buildCloser(...args)
+
+}
+function buildOpener(tag, attrs, text) {
+    // needs to put a cursor into it. for where ur supposed to go next
+}
+
+function buildCloser( tag, attrs, text, isc, isClosing) {
+    let withIndentedAttrs = attrs.length > 2 || isc
+    let s = `<${tag}`
+
+    if (!exists(attrs)) {
+        s += '>'
+        if (text) s += text
+    } else if (withIndentedAttrs) {
+        for (let i = 0; i < attrs.length; i++) {
+            let attr = attrs[i]
+            if (isc) {
+                if (i == 0) {
+                    s += '\n'
+                }
+                let isLast = i == attrs.length - 1
+                s += '   ' + attrEntry(attr, !isLast)
+                continue
+            }
+            if (i == 0) {
+                s += ' ' + attrEntry(attr, 1)
+            } else {
+                let isLast = i == attrs.length - 1
+                s += '   ' + attrEntry(attr, !isLast)
+            }
+        }
+
+        s += '>'
+        if (text) s += newlineIndent(text, 3)
+        else if (isc) s += '\n'
+
+    } else {
+        for (let i = 0; i < attrs.length; i++) {
+            let attr = attrs[i]
+            s += ' ' + attrEntry(attr)
+        }
+        s += '>'
+        s += text
+    }
+
+    //console.log(s, 'hi')
+    if (!isClosing) s += '\n\t\n'
+    s += toClosingTag(tag) + (isClosing ? '\n' : '')
+    return s
+}
+
+
+function htmlbuildLine( tag, attrs, text, isc, isClosing) {
+    let withIndentedAttrs = attrs.length > 2 || isc
+    let s = `<${tag}`
+
+    if (!exists(attrs)) {
+        s += '>'
+        if (text) s += text
+    } else if (withIndentedAttrs) {
+        for (let i = 0; i < attrs.length; i++) {
+            let attr = attrs[i]
+            if (isc) {
+                if (i == 0) {
+                    s += '\n'
+                }
+                let isLast = i == attrs.length - 1
+                s += '   ' + attrEntry(attr, !isLast)
+                continue
+            }
+            if (i == 0) {
+                s += ' ' + attrEntry(attr, 1)
+            } else {
+                let isLast = i == attrs.length - 1
+                s += '   ' + attrEntry(attr, !isLast)
+            }
+        }
+
+        s += '>'
+        if (text) s += newlineIndent(text, 3)
+        else if (isc) s += '\n'
+
+    } else {
+        for (let i = 0; i < attrs.length; i++) {
+            let attr = attrs[i]
+            s += ' ' + attrEntry(attr)
+        }
+        s += '>'
+        s += text
+    }
+
+    //console.log(s, 'hi')
+    if (!isClosing) s += '\n\t\n'
+    s += toClosingTag(tag) + (isClosing ? '\n' : '')
+    return s
+}
+
+function attrEntry(a, b, newline) {
+    if (isArray(a)) {
+        newline = b
+        b = a[1]
+        a = a[0]
+    }
+    return `${a}="${b}"${newline ? '\n': ''}`
+}
+
+module.exports.htmlLineParser = htmlLineParser
+
+function toOpeningTag(el, attrs = '', force) {
+    if (el == 'html') return '<!doctype html><html>'
+
+    if (isString(attrs)) {
+        attrs = ' class=' + doublequote(attrs)
+    } else if (attrs) {
+        attrs = reduceToString(attrs, (a, b) => {
+            return b ? ` ${a}="${b}"` : a
+        })
+    } else {
+        attrs = ''
+    }
+
+    const suffix = hasHtmlSuffix(el, force) ? '>' : '/>'
+    return '<' + el + attrs + suffix
+}
+
+function hasHtmlSuffix(el, force) {
+    if (force) return true
+    return closers.includes(el)
+}
+
+const closers = [
+    'style',
+    'p',
+    'pre',
+    'script',
+    'body',
+    'ul',
+    'li',
+    'p',
+    'textarea',
+    'button',
+    'section',
+    'div',
+    'h1',
+    'h2',
+    'h3',
+    'main',
+    'blockquote',
+    'span',
+    'article',
+    'body',
+    'html',
+    'head',
+    'template',
+    'h4',
+    'h5',
+    'h6',
+]
+
+function divify(tag, attrs = '', x = '') {
+    if (!x) x = ''
+    let s = toOpeningTag(tag, attrs)
+
+    if (
+        isArray(x) ||
+        (isString(x) && (hasNewline(x) || hasHtml(x)))
+    ) {
+        s += newlineIndent(x)
+    } else {
+        s += x
+    }
+
+    s += toClosingTag(tag)
+    return s
+}
+
+function hasHtml(s) {
+    return test(/<[a-z\/]/, s)
+}
+
+function toClosingTag(el) {
+    const noclosers = ['input', 'hr', 'br', 'link', 'img']
+    if (noclosers.includes(el)) return ''
+    return '</' + el + '>'
+}
+
+function vueText(s) {
+    return '{{' + toCamelCase(s) + '}}'
+}
+
+function fixClassName(s) {
+    s = s.trim()
+    if (!s || test(/[A-Z]/, s)) return s
+    const items = [
+        'post',
+        'get',
+        'split',
+        'set',
+        'is',
+        'has',
+        'create',
+        'component',
+    ]
+    const regex = ncg('^(?:$1)(?!(?:-|$))', items)
+    return replace(regex, '$&-', s, '')
+}
+
+s = `
+  //#apple show=bi click=run :class=hi style=bi
+  //apple show vt click = sam
+
+//p .foo .zoo hey hows it going boo=moo boo=hii
+//#apple .foo show .bg if :boo goo=boo
+  
+  //for items
+  //grass html=foo
+  //grass if
+  //.boo
+  //p .goo [okay]
+  //title .goo v oka
+  //<div  bb = nnn class="hi"></div>
+  abc-car show=zo html=html
+
+`
+function testRunner(s, fn) {
+    const value = linegetter(removeAllComments(s)).map(fn)
+    if (value) console.log(value[0])
+    return value
+}
+
+//console.log = display
+
+//console.log([1,2].map(onlySecond((x) => x + 3)))
+// working for smth ...
+// i am working too ...
+// to be tricked ... 
+//
+
+
+function assetObject(items, insideObject, lang = 'js') {
+    const delimiter = insideObject ? ': ' : ' = '
+    const ending = insideObject ? ',\n' : ''
+
+    if (items.length == 1) {
+        return `${insideObject ? '' : jspy(lang, 'const')}${items[0]}${delimiter}{\n\t\n}`
+    }
+    return (
+        jspy(lang, 'const') + 
+        items[0] + delimiter + 
+        items.slice(1).reduce((acc, item, i) => {
+            if (i % 2 == 0) acc += '    ' + toStringArgument(item)
+            else {
+                acc += ': ' + toStringArgument(item) + ',\n'
+            }
+            return acc
+        }, '{\n') + '}' + ending
+    )
+}
+function assetArray(items, lang = 'js') {
+    /* insideObject can be done later */
+    if (items.length == 1) {
+        return `${jspy(lang, 'const')}${items[0]} = [\n\t\n]`
+    }
+    return (
+        jspy(lang, 'const') + ' = ' + 
+        items[0] + 
+        wrap(items.slice(1).map(singlequote).join(', '), '[]')
+    )
+}
+
+function unquote(s) {
+    return s.slice(1, -1)
+}
+//console.log(opposite(true))
+
+function lineDitto(template, args) {
+    const key = search(/\w+(?= *=)/, template)
+    const regex = key ? 
+        (key.length > 2 ? key + '\\b' : `\\b${key}\\b`) :
+        args.shift()
+
+    const runner = (x) => {
+        return replace(regex, x, template)
+    }
+    return args.map(runner).join('\n')
+}
+//console.log([lineDitto('abcfoo()', ['abc', 'bb'])])
+//we arent children anymore.
+
+function forToNumber(s) {
+    if (isNumber(s)) {
+        return s
+    }
+    return s + '.length'
+}
+//console.log(filterObject({a:1, b:2, c:3}, (k,v) => k < 'a'))
+//console.log(test.toString().length)
+
+
+//console.log(timestamp())
+//console.log(alist.slice(0,2))
+
+
+//x=['a', 'b', 'c', 'd', 'e','f','g','h','i','k'].slice(0, 5).map((item, i) => {
+    //return {delay:250 * (1+i), key:item}
+//})
+//waterfall(x, console.log, console.log)
+//console.log(splitKatex('8 + 8'))
+
+
+
+function loremSimpleMathQuestion() {
+    let a = rng(1,100)
+    let b = rng(1,100)
+    let question = `${a}+${b}`
+    let answer = eval(question)
+    return { question, answer }
+}
+
+function loremMath(n = 1, mode) {
+    return (mode == Array ? identity : smallify)(range(n).map(loremSimpleMathQuestion))
+}
+//console.log(loremMath(1))
+//console.log(getProseWords('goo ba\'r c'))
+//console.log(decimalToFraction('0.15'))
+
+s = `
+run=gun .hh #gb #hh .foo
+`
+
+function abbreviateObject(o) {
+    return reduceObject(o, (k, v) => {
+        return [abbreviate(k), v]   
+    })
+}
+
+//console.log(rainbow(1))
+//console.log(Number(-0.2))
+//
+//color = -23
+//const colors = rainbow(Number(color))
+//console.log(colors)
+//console.log(divify('pre', '', 'hi\nbye'))
+        //console.log(vueLineParser('.boo submit {sdf}'))
+//toStringArgument(2)
+//console.log(toStringArgument('3'))
+//console.log(lineDitto('vv d 1 2', [1, 2]))
+module.exports.countParameters = countParameters
+        //console.log(partition(gatherArgs('prosemirror-setup.js', 'prosemirror.js, prosemirror.css')))

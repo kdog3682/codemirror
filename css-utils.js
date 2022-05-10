@@ -1,78 +1,4 @@
-// var {
-    // startsWithPeriod,
-    // removeStartingSymbols,
-    // divify,
-    // paired,
-    // isFunction,
-    // mreplace,
-    // fixSelector,
-    // toNumber,
-    // findall,
-    // n2char,
-    // prepareIterable,
-    // sorted,
-    // isStandardCss,
-    // dedent,
-    // Storage,
-    // len,
-    // toDictionary,
-    // newlineIndent,
-    // trimmed,
-    // splitonce,
-    // search,
-    // joined,
-    // ncg,
-    // isNestedArray,
-    // atFirst,
-    // atSecond,
-    // isNumber,
-    // roygbiv,
-    // reduce,
-    // parens,
-    // hasNumber,
-    // test,
-    // toCamelCase,
-    // isObject,
-    // split,
-    // stringcall,
-    // doublequote,
-    // aggregate,
-    // splitmapfilter,
-    // getOptions,
-    // argsplit,
-    // compose,
-    // reduceToString,
-    // startsWithPeriod,
-    // splitOptionalComma,
-    // brackify,
-    // hasColon,
-    // curryEnd,
-    // curryStart,
-    // hasDash,
-    // exists,
-    // coerceToNumber,
-    // modularIncrement,
-    // blockComment,
-    // modularIncrementNumber,
-    // getLastWord,
-    // isStandardHtml,
-    // join,
-    // vmap,
-    // getUniqueLetters,
-    // getLongest,
-    // assert,
-    // zip,
-    // fillTo,
-    // flat,
-    // splitNumberBoundary,
-    // getLast,
-    // Spellcheck,
-// } = require('./utils.js')
-//end
-
 function cssDecompose(s) {
-    //console.log(s); throw ''
-
     const regex = /^(.*?) {\n([^]+?)\n}/m
     const fn = compose(runner, trimmed, dedent)
 
@@ -95,7 +21,7 @@ function cssDecompose(s) {
         }
     }
 }
-function aggregateCSS(s, mode) {
+function aggregateCSS(s, mode = String) {
     const regex = /^(.*?)\s*{([^]+?)}/gm
     const fn = compose(runner, trimmed, dedent)
     storage = new Storage()
@@ -106,7 +32,6 @@ function aggregateCSS(s, mode) {
             storage.add(a, c, d)
         }
     })
-    //cconst agg = aggregate(s, regex, null, fn)
 
     function runner(s) {
         const regex = test(/;/, s) ? /;\s*$/m : /\s*$/m
@@ -119,6 +44,7 @@ function aggregateCSS(s, mode) {
         return storage
     }
 
+    console.log(storage.entries)
     if (mode == String) {
         return cssCleanupFinalString(
             reduceToString(storage.entries, (k, v) => {
@@ -135,22 +61,73 @@ function aggregateCSS(s, mode) {
 function toCssFinalProduct(a, b) {
     const name = fixSelector(a)
     const value = cssReduce(b)
+    //console.log(value)
     return brackify(name, value)
 }
 
+function imageGetter(s) {
+    const value = ImageLibrary[s] || s
+    return addExtension(value, 'jpeg')
+}
+
+function cssImgParser(s) {
+    return [
+        ['background-image', `url("${imageGetter(s)}")`],
+        ['background-size', 'cover'],
+        ['background-position', 'center center'],
+    ]
+}
+function backgroundPositionParser(s) {
+    const dict = {
+        't': 'top',
+        'l': 'left',
+        'r': 'right',
+        'b': 'bottom',
+        'c': 'center',
+    }
+    let [a,b] = s.length == 4 ? [s.slice(0, 2), s.slice(2)] :
+    [s[0], s[1]]
+   const value =  a + '%' + ' ' + b + '%'
+    return [['background-position', value]]
+}
+function cssBox() {
+    return [
+        ['width', '50px'],
+        ['height', '50px'],
+        ['background', randomColor()],
+    ]
+}
+function randomColor() {
+    return randomPick(roygbiv.slice(0, 5))
+}
+const cssFunctions = {
+    'box': cssBox,
+    'bgp': backgroundPositionParser,
+    'bgg': backgroundGradient,
+    'img': cssImgParser,
+}
+
+            //return [
+                //['position', 'absolute'],
+                //['top', posX + '%'],
+                //['left', posY + '%'],
+            //]
+let lastCssKey
+let lastCssValue
 function cssValueParser(a, b) {
     let initialKey = a
     let key = cssattrmap[a]
     if (isFunction(key)) {
         return key(b)
     }
+    //console.log({a, key, b})
 
     if (!b) return [key, 0]
     b = b.replace(/\$[a-zA-Z]+/, (x) => 'var' + parens('--' + x.slice(1)))
     const initials = ['none', 'transparent', 'unset', 'initial', 'auto']
 
     if (b == 'u' || b == 'n') {
-        if (key == 'border') key = 'bottom'
+        if (key == 'border' && a != 'border') key = 'bottom'
         return [key, 'unset']
     }
     if (initials.includes(b)) return [key, b]
@@ -159,7 +136,10 @@ function cssValueParser(a, b) {
 
     switch (a) {
         case 'o':
-            if (b.length < 2 || isNumber(b)) return [key, b]
+            if (b.length < 2 || isNumber(b)) {
+                if (Number(b) > 1) b = b/10
+                return [key, b]
+            }
             key = 'outline'
             return cssBorder(b, key)
         case 'br':
@@ -175,10 +155,11 @@ function cssValueParser(a, b) {
         case 'border':
             return cssBorder(b, key)
         case 'z':
+        case 'zi':
         case 'offset':
         case 'scale':
         case 'fw':
-            return [key, b]
+            return [key, Number(b) < 10 ? b * 100 : b]
         case 'pos':
             let translateX
             let translateY
@@ -224,6 +205,17 @@ function cssValueParser(a, b) {
     return [key, b]
 }
 
+const cssAliases = {
+    'kf': 'keyframes',
+    'grid': 'grid',
+    'gr': 'grid-template-rows',
+    'gc': 'grid-template-columns',
+}
+const cssRef = {
+    gr(s) {
+        
+    },
+}
 function cssEvaluator(s) {
     if (isObject(s)) {
         return s
@@ -232,41 +224,44 @@ function cssEvaluator(s) {
         return toDictionary(cssSingletonParser(removeStartingSymbols(s)))
     }
 
+    const [a, b] = splitonce(s)
+    if (a in cssFunctions) return cssFunctions[a](b)
+
     const items = hasColon(s)
         ? split(s, /: ? +/)
         : splitOptionalComma(s).reduce(cssItemReducer, [])
 
     return toDictionary(items)
-
 }
 
-    function cssItemReducer(acc, item) {
-        //console.log(item)
-        function push(item) {
-            if (isNestedArray(item)) {
-                acc.push(...item)
-            } else {
-                acc.push(item)
-            }
-        }
+function cssItemReducer(acc, item) {
+    function cssPush(item) {
+        if (!item) return 
+        let nested = isNestedArray(item)
+        ;[lastCssKey, lastCssValue] = nested ? 
+            item[0] : item
 
-        if (item in cabalias) {
-            push(cabmap[cabalias[item]])
-        } else if (item in cabmap) {
-            push(cabmap[item])
-        } else {
-            let match = search(cssParserGlobalREGEX, item)
-            if (match) push(cssValueParser(...match))
-        }
-
-        return acc
+        if (nested) { acc.push(...item) } 
+        else { acc.push(item) }
     }
+    if (item in cabalias) {
+        cssPush(cabmap[cabalias[item]])
+    } else if (item in cabmap) {
+        cssPush(cabmap[item])
+    } else {
+        let match = search(cssParserGlobalREGEX, item)
+        if (match) cssPush(cssValueParser(...match))
+    }
+
+    return acc
+}
 
 function cssParser(name, value) {
     if (!value) return
     if (isStandardCss(value)) {
         return value
     }
+    if (name == 'import') return assets.css[value] || ''
     return toCssFinalProduct(name, cssEvaluator(value))
 }
 
@@ -330,6 +325,143 @@ function cssAddPeriod(s) {
     return startsWithPeriod(s) ? s : '.' + s
 }
 
+
+
+const GoogleFontList = [
+    'Fauna One',
+    'Oleo Script',
+    'Fugaz One',
+    'Monda',
+    'Unica One',
+    'Alegreya',
+    'Abril Fatface',
+    'Vollkorn',
+    'Megrim',
+    'Roboto Slab',
+    'Open Sans',
+    'Gentium Basic',
+    'Questrial',
+    'Old Standard TT',
+    'Ovo',
+    'Muli',
+    'Playfair Display',
+    'Vast Shadow',
+    'Oswald',
+    'Playfair Display SC',
+    'Neuton',
+    'Quattrocento',
+    'Fanwood Text',
+    'Exo ',
+    'Inknut Antiqua',
+    'Quando',
+    'Judson',
+    'Montserrat',
+    'Vollkorn',
+    'Exo',
+    'Stint Ultra Expanded',
+    'Slabo ',
+    'Ultra',
+    'Open Sans Condensed',
+    'Lora',
+    'Alfa Slab One',
+    'Gentium Book Basic',
+    'Nixie One',
+    'Libre Baskerville',
+    'Julius Sans One',
+    'Crimson Text',
+    'Almendra Display',
+    'Cardo',
+    'Philosopher',
+    'Cinzel Decorative',
+    'Amiri',
+    'Oswald',
+    'Yeseva One',
+    'Merriweather Sans',
+    'Merriweather',
+    'Mr De Haviland',
+    'Neuton',
+    'Scope One',
+    'Shrikhand',
+    'Sansita One',
+    'Chonburi',
+    'Fjord One',
+    'BioRhyme',
+    'Lemon',
+    'Poppins',
+    'Halant',
+]
+
+
+const FontList = [
+    'Montserat',
+    'Lato',
+    'Poppins',
+    'Open Sans',
+    'Roboto',
+    'Raleway',
+    'Cormorant',
+    'DM Sans',
+    'DM Serif',
+    'Arvo',
+    'Playfair Display',
+    'Montserrat',
+    'Source Serif Pro',
+    'Source Sans Pro',
+    'Kameron',
+    'Neuton',
+    'Varela Round',
+    'IBM Plex Sans',
+    'IBM Plex Serif',
+    'Alegreya',
+    'EB Garamond',
+    'Fira Sans',
+    'IBM Plex Sans',
+    'IBM Plex Serif',
+    'Merriweather',
+    'Montserrat',
+    'Newsreader',
+    'Rosario',
+    'Rosarivo',
+    'Recursive',
+    'Spectral',
+    'Ubuntu',
+    'Vollkorn',
+]
+const FontLibrary = {
+    '': 'foo'
+}
+
+const ImageLibrary = {
+    
+}
+
+function backgroundGradient(s) {
+    /* never know what it will be */
+    //-?\d+(?:[a-z]\d+)
+    const items = split(s, /(?=[a-z])/)
+    let extra = ''
+    const values = items.map((item, i) => {
+        if (i == 0) {
+            if (isNumber(item)) {
+                return i + 'deg'
+            }
+            else {
+                extra = 'to right, '
+            }
+        }
+
+        let [a,b] = [item.slice(0, 2), item.slice(2)]
+        //console.log([a,b])
+        let color = cssColor(a)
+        let offset = b ? b + '%' : ''
+        return color + ' ' + offset
+    })
+    //console.log(values); throw ''
+    const arg = extra + values.join(', ')
+    const output = `linear-gradient(${arg})`
+    return [['background', output]]
+}
+
 function cssPcal(s) {
     let options
     ;[s, options] = getOptions(s)
@@ -376,6 +508,7 @@ function cssPcal(s) {
     }
 }
 
+
 const cssSelectorSuffixes = {
     a: '::after',
     b: '::before',
@@ -392,11 +525,11 @@ const cabalias = {
 }
 
 function cssCleanupFinalString(s) {
-    return join(s.split('\n').filter((x) => !cssHasStringError(x)))
+    return lineFilter(s, (x) => !cssHasStringError(x))
 }
 
 function cssHasStringError(s) {
-    return s && /null|undefined|unset|: (?:[=]|[a-zA-Z]{1,3};)/.test(s)
+    return s && /null|undefined|: (?:[=]|[a-zA-Z]{1,2};)/.test(s)
 }
 
 function cssBoxShadow(b) {
@@ -418,7 +551,7 @@ function cssBorder(s, key) {
         if (isNumber(s)) {
             return [key + '-' + 'width', s + 'px']
         } else {
-            return ['border-color', cssColor(s)]
+            return [key + '-color', cssColor(s)]
         }
     }
 
@@ -457,7 +590,7 @@ function cssShorthand(s) {
     const ref = [
         [/^([odt])(\d+\.?\d*)/, csho], // opacity  and delay
         [/^(\d+)[,-](\d+)(pex)?/, cshpos], // position
-        [/^([bu]?)([roygbiv])(\d*)([st])?/, cshcolor], // color
+        [/^([bu]?)([pwroygbiv])(\d*)([st])?/, cshcolor], // color
     ]
 
     const items = s.trim().split(/ +/)
@@ -585,7 +718,7 @@ class Partitions {
         this.count++
     }
 }
-function partition(sa, n = 2) {
+function cssPartition(sa, n = 2) {
     const sizes = Math.ceil(sa.length / n)
     console.log(sizes)
     const items = Array.from(sa)
@@ -619,7 +752,7 @@ function oldpartition(sa, n = 2, frontHeavy = false) {
     return store
 }
 function cutInHalf(sa) {
-    return partition(sa, 2)
+    return cssPartition(sa, 2)
 }
 function splitNumberBoundary(s) {
     return findall(/\d+|[a-zA-Z]+/g, s)
@@ -772,8 +905,47 @@ var tailwindStorage = {
 }
 
 const cabmap = {
+    'smoothfont': [
+    ['text-rendering', 'optimizeLegibility'],
+  ['text-rendering', 'geometricPrecision'],
+  ['font-smooth', 'always'],
+  ['font-smoothing', 'antialiased'],
+    ],
     /* marked */
 
+    gtext: [
+      //["background-clip", "text"],
+      //["color", "transparent"],
+      ["-webkit-background-clip", "text"],
+      ["-webkit-text-fill-color", "transparent"],
+    ],
+    jis: [['justify-items', 'start']],
+    jie: [['justify-items', 'end']],
+    jic: [['justify-items', 'center']],
+    jcsb: [['justify-content', 'space-between']],
+    jcsa: [['justify-content', 'space-around']],
+    jcse: [['justify-content', 'space-evenly']],
+    jist: [['justify-items', 'stretch']],
+
+    ais: [['align-items', 'start']],
+    aie: [['align-items', 'end']],
+    aic: [['align-items', 'center']],
+    aist: [['align-items', 'stretch']],
+
+    jis: [['justify-items', 'start']],
+    jie: [['justify-items', 'end']],
+    jic: [['justify-items', 'center']],
+    jist: [['justify-items', 'stretch']],
+
+    jcs: [['justify-content', 'start']],
+    jce: [['justify-content', 'end']],
+    jcc: [['justify-content', 'center']],
+    jcst: [['justify-content', 'stretch']],
+
+    acs: [['align-content', 'start']],
+    ace: [['align-content', 'end']],
+    acc: [['align-content', 'center']],
+    acst: [['align-content', 'stretch']],
     ored: [['outline', '1px solid red']],
     outline: [['outline', '1px solid red']],
     arrow: [['list-style', 'none']],
@@ -794,15 +966,15 @@ const cabmap = {
     span: [['display', 'inline']],
     block: [['display', 'block']],
     ofh: [['overflow', 'hidden']],
-    ttc: [['text-transform', 'capitalize']],
-    ttuc: [['text-transform', 'uppercase']],
-    ttlc: [['text-transform', 'lowercase']],
+    upper: [['text-transform', 'uppercase']],
+    cap: [['text-transform', 'capitalize']],
+    lower: [['text-transform', 'lowercase']],
     ofs: [
         ['overflow', 'scroll'],
         ['overflow-x', 'hidden'],
     ],
-    //ofx: [['overflow-x', 'hidden']],
-    //ofy: [['overflow-y', 'hidden']],
+    ofx: [['overflow-x', 'hidden']],
+    ofy: [['overflow-y', 'hidden']],
     bebas: [['font-family', 'bebas']],
     pre: [
         ['font-family', "'Courier New', monospace"],
@@ -1051,7 +1223,7 @@ const cabmap = {
     black: [['color', '#333']],
     green: [['color', 'tailwind-green']],
 
-    font16: [
+    f16: [
         ['font-size', '24px'],
         ['font-weight', '600'],
     ],
@@ -1171,18 +1343,34 @@ function cssGrid(b) {
     }
     return store
 }
+function cssBackgroundPosition(s) {
+    const value = isNumber(s) ? [s.slice(0, 2), s.slice(2)].map(addf('%')) : [s]
+    return [['background-position', value.join(' ')]]
+}
+
+function cssFontFamily(s) {
+    let font = FontLibrary[s] || font
+    return [['font-family', font]]
+}
+
+/* my social skills suck */
 
 const cssattrmap = {
     /* marked */ con: 'content',
     '-?\\d{1,2}': '',
     bs: cssKeyWrap('animation', cssAnimation),
     cm: cssColorMatch,
+    ff: cssFontFamily,
     grid: cssGrid,
+    //bgp: cssBackgroundPosition,
     ul: cssUnderline,
     bs: cssKeyWrap('box-shadow', cssBoxShadow),
     //ff: cssFontFamily,
     // \d = positioning
-    mwh: '',
+    bblr: 'border-bottom-left-radius',
+    bbrr: 'border-bottom-right-radius',
+    btrr: 'border-top-right-radius',
+    btlr: 'border-top-left-radius',
     wh: '',
     calc: '',
     px: '',
@@ -1214,6 +1402,7 @@ const cssattrmap = {
     br: 'border-right',
     bt: 'border-top',
     z: 'z-index',
+    zi: 'z-index',
     o: 'opacity',
     fw: 'font-weight',
     br: 'border-radius',
@@ -1252,7 +1441,8 @@ const cssattrmap = {
     l: 'left',
     t: 'top',
     right: 'right',
-    r: 'rotate',
+    r: 'right',
+    //r: 'rotate',
     ta: 'text-align',
     s: 'scale',
     tx: 'transform',
@@ -1273,16 +1463,35 @@ const tailwind = {
     olive: '',
     strawberry: '',
     tomato: '',
-    black1: 'asd',
-    black2: 'asd',
-    black3: 'asd',
-    black4: 'asd',
-    black5: 'asd',
-    black: '#111',
-    black6: 'asd',
-    black7: 'asd',
-    black8: '#111',
-    black9: 'asd',
+    //black1: 'asd',
+    //black2: 'asd',
+    //black3: 'asd',
+    //black4: 'asd',
+    //black5: 'asd',
+    //black: '#111',
+    //black6: 'asd',
+    //black7: 'asd',
+    //black8: '#111',
+    //black9: 'asd',
+
+    black1: 'rgba(0, 0, 0, .1)',
+    white1: 'rgba(255, 255, 255, .1)',
+    black2: 'rgba(0, 0, 0, .2)',
+    white2: 'rgba(255, 255, 255, .2)',
+    black3: 'rgba(0, 0, 0, .3)',
+    white3: 'rgba(255, 255, 255, .3)',
+    black4: 'rgba(0, 0, 0, .4)',
+    white4: 'rgba(255, 255, 255, .4)',
+    black5: 'rgba(0, 0, 0, .5)',
+    white5: 'rgba(255, 255, 255, .5)',
+    black6: 'rgba(0, 0, 0, .6)',
+    white6: 'rgba(255, 255, 255, .6)',
+    black7: 'rgba(0, 0, 0, .7)',
+    white7: 'rgba(255, 255, 255, .7)',
+    black8: 'rgba(0, 0, 0, .8)',
+    white8: 'rgba(255, 255, 255, .8)',
+    black9: 'rgba(0, 0, 0, .9)',
+    white9: 'rgba(255, 255, 255, .9)',
     gray1: '#f7fafc',
     gray2: '#edf2f7',
     gray3: '#e2e8f0',
@@ -1509,20 +1718,21 @@ module.exports.cssParser = cssParser
 //
 
 
-var cssPresets = {
+const cssPresets = {
     display: ['inline-block', 'inline', 'block', 'grid', 'flex'],
     overflow: ['hidden', 'scroll', 'auto'],
     'text-transform': ['capitalize', 'uppercase', 'lowercase'],
     'font-family': [
         '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen',
-        'Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue',
-        'sans-serif',
-        'bebas',
-        'Times',
-        'Georgia',
-        'Garamond',
-        'Source Code Pro, Consolas, Monaco, Menlo, Consolas, monospace',
+        //'Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue',
+        //'sans-serif',
+        //'bebas',
+        //'Times',
+        //'Georgia',
+        //'Garamond',
+        //'Source Code Pro, Consolas, Monaco, Menlo, Consolas, monospace',
     ],
+    'font-family': GoogleFontList,
     position: ['absolute', 'relative', 'unset'],
     'justify-content': [
         'space-evenly',
@@ -1582,8 +1792,8 @@ function cssGridAreaChild(name) {
 //console.log(cssParser('body', 'cmblue4'))
 //console.log(cssParser('body', 'sans'))
 //l p
-//console.log(partition(alist ['a', 'b', 'c', 'd', 'e']))
-//console.log(partition(['a', 'b', 'c', 'd'], 2))
+//console.log(cssPartition(alist ['a', 'b', 'c', 'd', 'e']))
+//console.log(cssPartition(['a', 'b', 'c', 'd'], 2))
 //console.log(ecCol('fo', ['gg', 'hh', 'mjh'], '', {center: 1}))
 //
 //
@@ -1717,6 +1927,7 @@ function cssSingletonParser(s) {
 
 const cssSpellcheck = spellcheckFactory(cssReplacementDictionary)
 const cssParserGlobalREGEX = aggregateRegexFromHashmap(cssattrmap)
+//console.log(cssParserGlobalREGEX)
 
 function splitHtmlCss(s) {
     console.log('humz'); throw 'humz'
@@ -1807,6 +2018,9 @@ function cssParseFromString(s) {
     /* string to string parsing */
     /* @cssLoader */
 
+    if (hasBracket(s)) {
+        return s
+    }
     if (isRawBracketCss(s)) {
         const chunks = schemaMatch('^.?$word {$symbols}', s, 'gm')
         return reduceToString(chunks, (name, items) => {
@@ -1839,19 +2053,34 @@ function gridify(n, key = 'rows') {
     return verticalColumnGridTemplate
 }
 
-function cssGridWithoutChildrenOrReferences(s) {
-    
-}
-function cssTableStyle1(s) {
-    // writing function let store = []u see exactly what is happening
-    // each item should be a vh.  100vwh fullscreen full
-}
+//console.log(cssParser('bbb3', 'bgr1'))
+//console.log(toCssFinalProduct('a', cssEvaluator('bbb3 bgr1')))
 
-function foo() {
-    s = cssEvaluator('cmb3')
-    console.log(s)
-    // pressing f3 will evaluate this with everything included
-    // sometimes u want to define things independent of children
-}
-//---------------------------
-//column-count
+//console.log(fixSelector('.sdf'))
+        //text = 'wh40 jic'
+        //const dict = cssEvaluator(text)
+        //const cssValue = cssReduce(dict)
+        //console.log({cssValue})
+
+//console.log(cssParser(null, 'bgp 1010'))
+//console.log(cssParser(null, 'bgg v3v7'))
+//console.log(cssParser(null, 'fflato'))
+//console.log(cssEvaluator('2020'))
+//console.log(cssGridArea('tom', ['a', 'b', 'c'], 'ab/cc'))
+//cssIncrement('font-family', 1, 1)
+//console.log(cssIncrement('font-family', null, 1))
+//console.log(cssEvaluator('2020'))
+//console.log(cssEvaluator('2020'))
+//console.log(cssEvaluator('2020'))
+//console.log(cssEvaluator('2020'))
+//console.log(cssEvaluator('2020'))
+//console.log(cssEvaluator('2020'))
+//console.log(cssEvaluator('2020'))
+//console.log(cssEvaluator('bb1b3'))
+//console.log(cssEvaluator('btlr5'))
+//console.log(cssEvaluator('bru'))
+//console.log(cssEvaluator('o5'))
+//console.log(cssEvaluator('o5'))
+//console.log(cssEvaluator('o5'))
+//console.log(cssEvaluator('fcb5'))
+//console.log(cssEvaluator('bot10 top10 left10 right10 l20 r20p t30em'))

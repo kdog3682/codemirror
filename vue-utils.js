@@ -1,10 +1,137 @@
+function componentFromData(data, componentRef) {
+    const dataRef = {data() { return data }}
+    const component = Object.assign(componentRef, dataRef)
+    return component
+}
+function renderModal(h, value) {
+        const style = {
+            zIndex: '999',
+            position: 'absolute',
+            bottom: '10%',
+            right: '10%',
+            background: 'yellow',
+            'fontSize': '24px',
+            border: '2px solid black',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+        }
+        return renderWrapper(h, {style}, value)
+}
+function hfactory(h) {
+    function lambda(options, ...components) {
+         return renderWrapper(h, options, ...components)
+    }
+}
+
+class VueSocketService {
+    emit(a, b) {
+        this.socket.emit(a, b)
+    }
+    constructor(vue) {
+        this.socket = io()
+        this.socket.on('data', (data) => {
+            Object.assign(vue, data)
+        })
+    }
+}
+
+function groupRenderer(key, o) {
+    /* this is too hard to use */
+    /* readability is important */
+    return {
+        render(h) {
+            const name = toDashCase(this.$options.name)
+            const items = this[key]
+            const children = items.map((item, i) => {
+                const childName = name + '-' + 'item'
+                o.class = childName
+                const options = propOptionBuilder(this, o, item)
+                return h(tag, options, item)
+            })
+            return renderWrapper(h, name, children)
+        }
+    }
+}
+
+const LibraryPicker = {
+    name: 'LibraryPicker',
+    props: ['value'],
+    template: `
+        <div class="library-picker">
+            <div v-for="item in value" 
+                <div class="library-picker-item">
+                    
+                </div>
+            </div>
+        </div>
+    `,
+    methods: {
+        click() {
+            this.$store.commit('add', 'scripts', item)
+        },
+    },
+}
+
+
+
+
+class VueDisplayManager {
+    constructor({state, callbacks}) {
+        this.vue = state
+        this.callbacks = bindObjectToState(callbacks, state)
+        this.keys = Object.keys(this.vue.displays)
+
+        this.lastKey = null
+        this.activeKey = findKey(
+            this.vue.displays,
+            null,
+            isTrue
+        )
+    }
+
+    async exit() {
+        await this.enter(this.lastKey)
+    }
+    async enter(key, ...args) {
+        if (!key || this.activeKey == key) return 
+
+        this.lastKey = this.activeKey
+        await this.doAfter(this.lastKey, 'Exit')
+        this.vue.displays[this.lastKey] = false
+
+        await this.doAfter(key, 'Enter', ...args)
+        this.vue.displays[key] = true
+        this.activeKey = key
+    }
+
+    async enterAndLeave(key, ...args) {
+        const delay = isNumber(args[0]) && args.shift() || 
+            this.vue.config.delay || 0
+        await this.enter(key, ...args)
+        if (!delay) return 
+            //console.log(delay)
+            //console.log('vvvvvvvvvvvvvvvvvvv')
+        await sleep(delay)
+        await this.enter(this.lastKey)
+    }
+
+    async doAfter(key, mode, ...args) {
+        const name = key.toLowerCase() + mode
+        console.log(name)
+        const callback = this.callbacks[name]
+        if (callback) {
+            console.log('calling')
+            await callback(...args)
+        }
+    }
+}
+
+
+
 function loremGenerateQuestion() {
     return `${rng()} + ${rng()} = ?`
-}
-function isVue(x) {
-            let name = x.constructor.name
-            return name == 'Vue' || name == 'VNode' || name == 'VueComponent'
-    return x._isVue
 }
 
 function propify(key, value) {
@@ -26,9 +153,6 @@ function toProps(key, data, ...args) {
 }
 
 
-function isVueNode(x) {
-    return x._isVue || x.$el
-}
 
 
 function vuetify(x) {
@@ -140,6 +264,14 @@ function toRefs(name) {
     return {
         ref: name,
         refInFor: name.endsWith('s'),
+    }
+}
+
+
+function useDirective(name, value) {
+    if (!value) return 
+    return {
+        directives: [{ name, value }],
     }
 }
 
@@ -285,6 +417,7 @@ const VueColorBindDirective = {
     },
 }
 
+
 const VueColorDirective = {
     name: 'color',
     bind(el, binding) {
@@ -416,6 +549,37 @@ function findStateMethodKey(state, ...keys) {
     }
 }
 
+function componentGroupBuilderFactory(x) {
+    if (isFunction(x)) {
+        const name = callback.name
+        return function lambda(state, h, items) {
+            return componentGroupBuilder(
+                state, h, name, items, callback
+            )
+        }
+    }
+    if (isObject(x)) {
+        const {name, renderTable} = x
+        return function lambda(state, h, items) {
+            const children = items.map((item, i) => {
+                const callback = renderTable[item.tag]
+                return callback(state, h, item, i)
+            })
+            return renderWrapper(h, name, children)
+        }
+    }
+}
+
+function componentGroupBuilder(state, h, {
+    name, items, callback}) {
+
+    const children = items.map((item, i) => {
+        return callback(state, h, item, i)
+    })
+    return renderWrapper(h, name, children)
+}
+
+
 function componentBuilder(state, h, component, o) {
     assignFresh(o, {
         class: isString(component) ? component : component.name
@@ -425,10 +589,11 @@ function componentBuilder(state, h, component, o) {
     return h(component, options)
 }
 
-function propOptionBuilder(state, o) {
+function propOptionBuilder(state, o, arg) {
     if (!exists(o)) {
         return {}
     }
+
     const keyPressLibrary = {}
 
     function keyDownHandler(e) {
@@ -438,7 +603,6 @@ function propOptionBuilder(state, o) {
     }
 
     const functionBuilder = (k, arg1) => {
-
         let runner = state.$options[k] || state[k]
         let args = []
 
@@ -452,33 +616,46 @@ function propOptionBuilder(state, o) {
     const propsBuilder = (x) => {
         if (isString(x)) {
             return {[x]: x}
-        }
-        else if (isObject(x)) {
+        } else if (isObject(x)) {
             return x
-        }
-        else {
+        } else {
             return {propItem: x}
         }
     }
 
     const directiveBuilder = (name, value) => {
-        if (value === null) {
-            value = state[name]
-        }
+        if (value === null) { value = state[name] }
         name = toDashCase(name)
         return {name, value}
     }
 
-    let k1
-    let k2
-
-    //console.log(o)
     return Object.entries(o).reduce((acc, [k,v], i) => {
         if (isFunction(v)) {
-             return addProperty(acc, 'on', k, v.bind(state))
+             const value = arg ? 
+                () => fn.call(state, arg)
+                : fn.bind(state)
+             return addProperty(acc, 'on', k, value)
         }
 
+
+        let k1
+        let k2
+
         switch (k) {
+            case 'center':
+              return addProperty(acc, 'style', {
+                  display: 'flex', 
+                  alignItems: 'center',
+                  justifyContent: 'center',
+              })
+
+            case 'pos':
+              return addProperty(acc, 'style', {
+                  position: 'absolute', 
+                  left: v[0],
+                  top: v[1],
+              })
+
             case 'katex':
             case 'katex':
             case 'katex':
@@ -765,7 +942,7 @@ function isFocusableComponent(x) {
 function transitionWrapper(h, className, children) {
     if (arguments.length == 2) {
         children = className
-        className = 'no-transition-class-name'
+        className = ''
     }
 
     const props = {
@@ -779,6 +956,7 @@ function transitionWrapper(h, className, children) {
     if (isArray(children)) {
         return h('div', opts, [h('transition-group', props, children)])
     } else {
+        console.log('hi', opts, props)
         return h('div', opts, [h('transition', props, children)])
     }
 }
@@ -869,43 +1047,6 @@ function isDirectiveObject(x) {
 
 
 
-function addProperty(o, ...args) {
-    if (args.length == 2) {
-        return addPropertyLambda2(o, ...args)
-    }
-
-    if (args.length == 3) {
-        if (args[2] == Array) {
-            return addPropertyLambdaArray(o, ...args)
-        }
-        return addPropertyLambda3(o, ...args)
-    }
-    function addPropertyLambdaArray(o, key, value) {
-        if (!o.hasOwnProperty(key)) {
-            o[key] = []
-        }
-        isArray(value) ? 
-            o[key].push(...value) : 
-            o[key].push(value)
-
-        return o
-    }
-
-}
-
-function addPropertyLambda2(o, key, value) {
-    o[key] = value
-    return o
-}
-
-function addPropertyLambda3(o, parentKey, key, value) {
-    if (!o.hasOwnProperty(parentKey)) {
-        o[parentKey] = {}
-    }
-    o[parentKey][key] = value
-    return o
-}
-
 function addPropertyKey(object, key, value) {
     if (!object.hasOwnProperty(key)) {
         object[key] = getValueFromStringCase(value)
@@ -979,11 +1120,9 @@ const LetterQuestionComponent =
 const LetterComponent =
     loremVerySimpleComponent('childPropData')
 
-function emitNext(state) {
-    const name = state.$options.name || 
-                state.$options.propsData._componentTag
-    console.log('emitting next from', name)
-    state.$emit('next', name)
+function emitNext(state, data) {
+    const name = state.$options.name 
+    state.$emit('next', name, data)
 }
 
 
@@ -991,21 +1130,11 @@ function emitNext(state) {
 
 function vueSetupErrorHandler() {
      Vue.config.errorHandler = (err, vm, info) => {
+         console.log('error')
          console.log(err.stack)
          throw new Error('stop')
      }
 }
-
-function loremSimpleMathQuestion() {
-    let n = rng(1,10)
-        let question = `${n}+${n}`
-        let answer = eval(question)
-    return { question, answer }
-}
-
-
-
-
 
 
 function addClasses(o, ...args) {
@@ -1131,7 +1260,6 @@ const ensureDirectives = addPropertyKeyFactory('directives', '[]')
 //const addVuePropKeyOnce = onceFunctionFactory(addVuePropKey)
 
 vuetify(vueDispatch)
-vuetify(VueKatexDirective)
 vuetify(VueColorDirective)
 vuetify(VueFocusItDirective)
 vuetify(VueDisableItDirective)
@@ -1196,3 +1324,108 @@ function gvi(x, simple) {
     return value
 }
 vuetify(VueColorBindDirective)
+//
+
+//vueSetupErrorHandler()
+
+
+function renderList(h, items, component) {
+  const children = items.map((item, i) => {
+    return h(component, { 
+        props: item,
+        key: i,
+    })
+  })
+  return transitionWrapper(h, children)
+}
+
+
+
+
+function vueWindowListener(vue) {
+    const listener = vue.listener.bind(vue)
+    window.addEventListener('keydown', listener)
+    return () => {
+        console.log('removing listener')
+        window.removeEventListener('keydown', listener)
+    }
+}
+
+
+
+
+function RHF(state, h) {
+    return function lambda(item, i) {
+        const component = getComponent(item.ckey)
+        const propOptions = component.propOptions
+        const options = propBuilder(state, item, i, propOptions)
+        return h(component, options)
+    }
+}
+function propBuilder(state, options, i) {
+    const store = {}
+
+    const props = options.props && (isObject(options.props) ?
+        options.props : {value: options.props})
+
+    if (props) store.props = props
+
+    if (options.key == true) store.key == i
+    else if (options.key) store.key = options.key
+    if (options.onEnter == true) 
+        if (state.onEnter) {
+            addProperty(store, 'on', 'onEnter', state.onEnter.bind(state))
+        } else {
+            addProperty(store, 'on', 'onEnter', (...args) => {
+                state.$emit('onEnter', ...args)
+            })
+        }
+    else if (options.onEnter) {
+        addProperty(store, 'on', 'onEnter', options.onEnter.bind(state))
+    }
+
+    return store
+}
+
+function renderHelper(state, h, item, i) {
+    return h(getComponent(item.ckey), propBuilder(state, item, i))
+}
+function renderString(h, options, s) {
+    return h('p', optionGetter(options), s)
+}
+function renderArray(state, h, items, parentOptions) {
+    const filter = (x) => {
+        return x.hasOwnProperty('if') ? x.if === true : true
+    }
+    const children = items.filter(filter).map((item, i) => {
+        return renderHelper(state, h, item, i)
+    })
+    parentOptions = optionGetter(parentOptions)
+    return h('ul', parentOptions, children)
+}
+function propagateEmit(e) {
+    this.$emit(key, e)
+}
+
+vuetify(VueKatexDirective)
+
+function renderSvg(h, key, options = {}) {
+    const child = {template: svgs[key]}
+    return h(BaseIcon, options, child)
+}
+function optionGetter(parentOptions) {
+  if (isString(parentOptions)) {
+    parentOptions = {
+      class: parentOptions,
+    }
+  }
+  return parentOptions
+}
+
+function transitionElement(h, children) {
+    const props = {
+        props: { name: 'fade', mode: 'out-in', tag: 'div'}
+    }
+    return h('transition', props, children)
+    return h('div', [h('transition', props, children)])
+}

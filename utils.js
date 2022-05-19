@@ -1,5 +1,13 @@
+
+const aobj={a:1, b:2, c:3}
+    const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const TABINPUT = '\n\t$c\n'
 const HTMLTAGS = ['p', 'div', 'a', 'section', 'main', 'img', 'svg']
+
+const AGAIN = 'again'
+const NEXT_LEVEL = 'nextlevel'
+const INCORRECT = 'incorrect'
 const CONTINUE = 'CONTINUE'
 const DONE = 'DONE'
 const CORRECT = 'CORRECT'
@@ -238,19 +246,7 @@ function display(s, b) {
         return
     }
     if (isString(s)) {
-        if (test(/^\//, s)) {
-            s = s.slice(1)
-            const name = `[${s}]`
-            original(
-                Bright +
-                    Red +
-                    info() +
-                    Blue +
-                    name +
-                    Reset +
-                    puppetStringify(eval(s))
-            )
-        } else if (hasNewline(s)) {
+        if (hasNewline(s)) {
             original(
                 Bright + Red + info() + Reset,
                 s,
@@ -383,6 +379,79 @@ function consoleVisitor(x) {
     if (x == null) return
     return x.name || x.constructor.name
 }
+function reconfigure(state, options) {
+    if (!state.hasOwnProperty(('config'))) {
+        console.log('reconfigure always targets the config property')
+        return 
+    }
+    assignExisting(state.config, options)
+}
+
+function enforce(s) {
+    s = s.replace(/[a-zA-Z]+$/, (x) => {
+        return singlequote(x)   
+    })
+    let allGood = eval(s)
+    if (!allGood) {
+        let code = s.replace(/==/, '=')
+        eval(code)
+    }
+}
+
+
+function divide10(x) {
+    if (x % 10 == 0) return x / 10
+    return x
+}
+
+function notIn(x, ...args) {
+    args = gatherArgs(args)
+    if (isObject(x)) {
+        
+    }
+}
+
+
+function isColor(s) {
+    return roygbiv.includes(s) || /^#/.test(s)
+}
+
+function arithmetic(operator, a, b) {
+        const answer = eval(`${a} ${operator} ${b}`)
+        const question = `${a} ${operator} ${b} = `
+        const expression = `${question}${answer}`
+        const payload = {answer, question, expression}
+        return payload
+}
+
+function coerceTo(x, mode) {
+    assert(mode)
+    if (mode == 'array' || mode == Array) {
+        if (isArray(x)) {
+            return x
+        }
+        if (isString(x)) {
+            return /\n/.test(x) ? 
+                x.split(/\n/) :
+                / /.test(x) ? 
+                x.split(' ') :
+                x.split('')
+        }
+    throw 'not done'
+    }
+
+    if (mode == 'string' || mode == String) {
+        if (isString(x)) {
+            return x
+        }
+        if (isArray(x)) {
+            return x.join(' ')
+        }
+    throw 'not done'
+    }
+    throw 'not done'
+}
+
 function stringDictionaryEntry(a, b) {
     const parse = (x) => {
         if (isString(x)) {
@@ -394,6 +463,14 @@ function stringDictionaryEntry(a, b) {
 }
 
 
+
+//function isJsonParsable(b) {
+    //return test(/isJsonParsable)
+//}
+
+function looksLikeComponent(s) {
+    return /-/.test(s) || /^[A-Z]/.test(s)
+}
 
 function notIn(...args) {
     const ref = flat(args)
@@ -558,30 +635,36 @@ function forIterationArg(s) {
     return dict[match.toLowerCase()] || 'item'
 }
 const knownAttrs = {
-    submit: ['@submit', 'onSubmit'],
-    click: ['@click', 'onClick'],
-    x: ['@x', 'onX'],
-    x: ['@x', 'onX'],
-    x: ['@x', 'onX'],
-    x: ['@x', 'onX'],
-    submit: ['@submit', 'onSubmit'],
+    //submit: ['@submit', 'onSubmit'],
+    //click: ['@click', 'onClick'],
+    //x: ['@x', 'onX'],
+    //x: ['@x', 'onX'],
+    //x: ['@x', 'onX'],
+    //x: ['@x', 'onX'],
+    //submit: ['@submit', 'onSubmit'],
 }
 function vueHelper(key, value) {
+    let [a,b] = _vueHelper(key, value)
+    return `${a}="${b}"`
+}
+function _vueHelper(key, value) {
+    if (key == '@') {
+        return ['@' + value, value]
+    }
+
+    if (key == ':') {
+        if (value.includes('=')) {
+            let [a,b] = value.split('=')
+            return [':' + a, b]
+        }
+        return [':' + value, value]
+    }
     if (value == null && key in knownAttrs) {
         return knownAttrs[key]
     }
-    let vKey = vmap[key]
+    let vKey = vmap[key] || key
     if (key == 'for') {
-        value = `${forIterationArg(value)} in ${value}`
-    }
-
-    else if (key == 'click') {
-        value = 'on' + capitalize(value)
-    }
-    else if (key == 'if' || key == 'show') {
-                if (!test(/^show|^display/, value)) {
-                    value = toCamelCase('show-' + value)
-                }
+        value = `(${forIterationArg(value)}, i) in ${value}`
     }
 
     return [vKey, value]
@@ -764,6 +847,26 @@ function getHMSM(date) {
 }
 
 
+function getDayAndMonth(date) {
+    
+    if (!date) date = new Date()
+
+    var day = DAYS[ date.getDay() ];
+    var month = MONTHS[ date.getMonth() ];
+    return [day, month]
+}
+function datePhrase() {
+    const date = new Date()
+    const [day, month] = getDayAndMonth(date)
+    const [_, dayNumber, year] = getMDY(date)
+    return {
+        day, phrase: `${month} ${dayNumber}${ordinal(dayNumber)}, ${year}`
+    }
+}
+
+function ordinal(n) {
+    return [, 'st', 'nd', 'rd'][(n % 100 >> 3) ^ 1 && n % 10] || 'th'
+}
 
 function getMDY(date) {
     if (!date) date = new Date()
@@ -782,7 +885,7 @@ function isString(s) {
 
 function conditional(fn, condition) {
     return function lambda(x) {
-        if (condition(x)) return fn(x)
+        if (ftest(condition, x)) return fn(x)
         return x
     }
 }
@@ -836,6 +939,7 @@ function reduceIterableHelper(acc, value, k) {
         if (isArray(value) && value.length == 2) {
             acc[value[0]] = value[1]
         } else if (!isNull(value)) {
+            /* if the value is null ... skip */
             acc[k] = value
         }
         return acc
@@ -1070,6 +1174,15 @@ function isUtf(s) {
     return utfe.includes(getExtension(s))
 }
 
+s = `
+// increment ...
+// cssIncrement ...
+// able to do some things ... today
+//
+`
+
+function smartMore(s) {
+}
 function opposite(s) {
     const dict = {
         '{': '}',
@@ -1086,7 +1199,8 @@ function opposite(s) {
         1: 0,
         0: 1,
     }
-    return dict[s]
+    s = s.toString()
+    return dict.hasOwnProperty(s) ? dict[s] : s
 }
 
 class CumulativeStorage {
@@ -1549,6 +1663,11 @@ function regexElongation(s) {
     return `(?:${s})+`
 }
 
+function getBindingName(s) {
+    const bindingRE = /^(?:def|class|const|var|(?:async )?function) (\w+)/
+    return search(bindingRE, s)
+}
+
 function getFunctionName(s) {
     if (isFunction(s)) return s.name
     return search(
@@ -1754,6 +1873,9 @@ function isSelector(s) {
 }
 
 function boundary(s) {
+    if (isArray(s)) {
+        s = ncgRunner(s)
+    }
     return wrap(s, '\\b')
 }
 
@@ -2110,6 +2232,10 @@ function xsplit(s) {
         return s
     }
     return split(s, / +|([,\.])/)
+}
+
+function removeJavascriptComments(s, mode) {
+    return s.replace(/^ *\/\/|\/\*[^]*?\*\/.*\n*/gm, '')
 }
 
 function removeComments(s, mode) {
@@ -2472,6 +2598,33 @@ function reverse(s) {
     }
     return split(s).reverse().join('')
 }
+
+function latexTemplater(s, ref, regex = '\\w+') {
+    const ignore = ['left', 'right', 'frac', 'cdot', 'times']
+    const ignoreRE = ignore.join('|')
+    if (isArray(ref)) {
+        regex = RegExp(ignoreRE + '|' + regex, 'g')
+        let count = 0
+        return s.replace(regex, (x) => {
+            if (x.length > 1 && !isNumber(x)) return x
+            let item = ref[count++]
+            if (item == null) return x
+            if (isColor(item)) {
+                return katexColorer(x, item)
+            }
+            return fparse(item, x)
+        })
+    }
+    if (isObject(ref)) {
+        return s.replace(ncg(ref), (x) => {
+            let item = ref[x]
+            if (isColor(item)) {
+                return katexColorer(x, item)
+            }
+            return item || x
+        })
+    }
+}
 function templater(s, ref, keep) {
     if (!s.includes('$')) return s
 
@@ -2533,6 +2686,10 @@ function getIndent(s) {
 
 function identity(...args) {
     return args.length == 1 ? args[0] : args
+}
+
+function identity(s) {
+    return s
 }
 
 function trimmed(s) {
@@ -2818,6 +2975,9 @@ function getLongestOld(arr, measure = len, mode = Number) {
 }
 
 function splitSpellcheck(s, dict) {
+    if (isNumber(s)) {
+        return s
+    }
     return split(s)
         .map((x) => dict[x] || x)
         .join(' ')
@@ -2904,14 +3064,15 @@ function ncg(template, ref, escape) {
     } else {
         return templater(template, ncgRunner(ref, escape))
     }
+}
 
-    function ncgRunner(ref, escape) {
-        return isBoolean(escape)
-            ? prepareIterable(ref, 'keys')
-                  .map(rescape)
-                  .join('|')
-            : prepareIterable(ref, 'keys').join('|')
-    }
+
+function ncgRunner(ref, escape) {
+    return isBoolean(escape)
+        ? prepareIterable(ref, 'keys')
+              .map(rescape)
+              .join('|')
+        : prepareIterable(ref, 'keys').join('|')
 }
 
 function filterObjectHelper(items, fn) {
@@ -3177,7 +3338,7 @@ class Clock {
         this.delta = this.increment / this.speed
         if (this.duration <= 100) this.duration *= 1000
         assert(this.duration)
-        this.start()
+        if (options.autoStart) this.start()
     }
     pause() {
         this._pause = true
@@ -3830,6 +3991,10 @@ function mreplace(
     return [text, store]
 }
 
+function wait() {
+    return new Promise((resolve) => setTimeout(resolve, 100))
+}
+
 function sleep(delay = 3000) {
     delay = toMilliseconds(delay)
     return new Promise((resolve) => setTimeout(resolve, delay))
@@ -3950,6 +4115,12 @@ function toUpperCase(s) {
 
 function depluralize(s) {
     return s.replace(/s$/, '')
+}
+
+function intersects(a, b) {
+    a = prepareIterable(a, 'keys')
+    b = prepareIterable(b, 'keys')
+    return b.some((x) => a.includes(x))
 }
 
 function intersection(a, b) {
@@ -4599,6 +4770,17 @@ function toStringArgument(x, quotes) {
     return parse(x)
 }
 
+
+function createVariable(a, b, quotes = true, prefix = 'const') {
+    if (prefix) prefix += ' '
+    switch (b) {
+        case '': b = 'go'
+    }
+    let value = isJsonParsable(b) ? b : 
+        toStringArgument(b, quotes)
+    return `${prefix}${a} = ${value}`
+}
+
 function splitmapfilter(s, regex, fn, ...args) {
     const runner = (x, i, arr) => fn(x, ...args, i)
     return split(s, regex).map(runner).filter(exists)
@@ -4853,21 +5035,6 @@ function abbreviate(s, mode) {
         ? letters
         : letters.join('').toLowerCase()
 }
-function toabrev(s) {
-    let regex
-    if (isAllCaps(s)) {
-        regex = /[ \._]/
-    } else {
-        regex = /[ \._-]|(?<=[a-z])(?=[A-Z]+)/
-        //regex = /[ \._-]|(?=[A-Z]+)/
-    }
-
-    const items = split(s, regex)
-    return items
-        .map((x) => x[0])
-        .join('')
-        .toLowerCase()
-}
 class TextTokenizer {
     constructor(key) {
         const dictRE = ncg('^($1) *(.+)', dict)
@@ -4915,6 +5082,10 @@ function smallify(x) {
 }
 
 function spaceToCamel(s) {
+    if (isNumber(s)) {
+        return Number(s)
+    }
+    //return s.join('')
     let cap
     let lower
     return listgetter(s, ' ')
@@ -5143,6 +5314,14 @@ function mapfilter(items, fn, filter) {
     return store
 }
 
+function getParamInfo(s) {
+    const params = getParameters(s)
+    let length = params.length
+    if (params.includes('...')) {
+        length += 99
+    }
+    return {params, length}
+}
 function countParameters(v) {
     if (getFirstLine(v.toString()).includes('...')) {
         return 100
@@ -5507,6 +5686,26 @@ function bringToLife(s, context) {
     return toArgument(s)
 }
 
+function addNestedProperty(base, ...args) {
+    let ref = base
+    if (args[0].includes('.')) {
+        args.unshift(...args.shift().split('.'))
+    }
+    for (let i = 0; i < args.length; i++) {
+        let arg = args[i]
+        
+        if (i == args.length - 2) {
+            ref[args[i]] = args[i + 1]
+            break
+        } else {
+            if (!ref.hasOwnProperty(arg)) {
+                ref[arg] = {}
+            }
+            ref = ref[arg]
+        }
+    }
+    return base
+}
 function addDeepKey(ref, key, value) {
     let [keys, last] = splitOnceReverse(key, '.')
     keys.forEach((item, i) => {
@@ -5523,6 +5722,7 @@ function collectObjectFromString(s) {
     split(s, deli)
 }
 function looksLikeProse(s) {
+    if (/\\/.test(s)) return false
     return test(/^[a-zA-Z]{2,}/, s)
 }
 
@@ -5771,22 +5971,29 @@ function isStandardCss(s) {
 function isDoubleIterable(x) {
     return isArray(x[0]) && x[0].length == 2
 }
-function reduceToString(iterable, fn, mode = 'entries') {
+function reduceToString(iterable, fn, options = 'entries') {
     if (!fn && isObject(iterable)) {
         fn = (k, v) => v
+    }
+    let mode = 'entries'
+    let delimiter
+    if (isObject(options)) {
+        mode = options.mode
+        delimiter = options.delimiter || null
     }
     iterable = prepareIterable(iterable, mode)
     const runner = isDoubleIterable(iterable)
         ? (x, i) => fn(...x, i)
         : fn
-    return join(iterable.map(runner).filter(exists))
+    const values = iterable.map(runner).filter(exists)
+    return join(values, delimiter)
 }
 
-function join(arr) {
+function join(arr, delimiter) {
     if (!exists(arr)) {
         return ''
     }
-    if (arguments.length > 1) {
+    if (delimiter && arguments.length > 1 && !/^\s+$/.test(delimiter)) {
         arr = Array.from(arguments).filter(exists).map(String)
     } else if (isString(arr)) {
         return arr
@@ -5795,6 +6002,7 @@ function join(arr) {
     } else {
         arr = Array.from(arr)
     }
+    if (delimiter) return arr.join(delimiter)
 
     let s = ''
     for (let i = 0; i < arr.length; i++) {
@@ -6074,7 +6282,8 @@ function lbreplace(regex, replacement, s, flags) {
         regex = regex.toString()
         flags = regex.match(/\/(\w+)$/)
         flags = (flags && flags[1]) || ''
-        regex = regex.slice(1).replace(/\/\w+$/, '')
+        regex = regex.slice(1).replace(/\/\w*$/, '')
+        //console.log(regex)
     }
 
     if (test(/\?<=/, regex)) {
@@ -6116,7 +6325,9 @@ function lbreplace(regex, replacement, s, flags) {
             flags.replace('g', '')
         )
         //console.log([text, lb]); throw ''
-        return lb + replacement(text, ...args.slice(1))
+        let value = isFunction(replacement) ? 
+            replacement(text, ...args.slice(1)) : replacement
+        return lb + value
     }
 }
 
@@ -6307,9 +6518,6 @@ function smartDedent(s) {
     }
 }
 
-function hasHtml(s) {
-    if (s.includes('<')) return true
-}
 
 class Iter {
     set parser(fn) {
@@ -6607,6 +6815,8 @@ function testf(regex, flags = '') {
 // what is taking so long ...
 //
 const vmap = {
+    'v-bind': 'v-bind',
+    'style': ':style',
     enter: '@keydown.enter',
     tc: 'textContent',
     t: 'textContent',
@@ -6924,7 +7134,6 @@ function count(regex, s, flags = 'g') {
 //counted     count
 //infer-lang
 //trimmed trim
-//toabrev abbreviate
 //console.log(stringify(aggregate(text, /(\w+) = ([a-zA-Z].+)/g)))
 function isLogicFunction(s) {
     return test(/^(is|start|end|has)/, s)
@@ -7236,7 +7445,8 @@ function isOdd(n) {
     return n % 2 == 1
 }
 
-function divify(tag, className, x) {
+function divifyOLD(tag, className, x) {
+    console.log('sup')
     let attrs = className.includes('=')
         ? ' ' + className
         : className
@@ -8092,12 +8302,22 @@ function infuseSpanColors(s, colors) {
         'g'
     )
 }
+function createClassFromValue(s) {
+    let match = search(/^\w+(?: \w+)?/, s)
+    return toDashCase(match)
+}
 function spanify(value, options) {
     if (isString(options)) {
         options = {
             style: cssEvaluator(options),
         }
     }
+    else if (!options) {
+        options = {
+            class: createClassFromValue(value)
+        } 
+    }
+    //console.log(options); throw ''
     const attrs = Object.entries(options)
         .reduce((acc, [a, b], i) => {
             acc += a + '="'
@@ -8109,11 +8329,16 @@ function spanify(value, options) {
                 }
                 acc = acc.trim()
             }
+            else {
+                acc += b
+            }
+
             acc += '" '
             return acc
         }, '')
         .trim()
-    return divify('span', attrs, value)
+        //console.log(attrs); throw ''
+    return `<span ${attrs}>${value}</span>`
 }
 
 //s = infuseVue(s)
@@ -8935,7 +9160,6 @@ module.exports.regexStartsWithSpaces = regexStartsWithSpaces
 module.exports.inferlang = inferlang
 module.exports.isAllCaps = isAllCaps
 module.exports.abbreviate = abbreviate
-module.exports.toabrev = toabrev
 module.exports.TextTokenizer = TextTokenizer
 module.exports.getFunctionNames = getFunctionNames
 module.exports.removeSpaces = removeSpaces
@@ -9537,6 +9761,12 @@ s = `  console.log(' bye)`
 //const promises = [1,2,3].map(promiser)
 //Promise.all(promises).then(console.log)
 
+function surpassFunction(fn, gn) {
+    return (...args) => {
+        if (gn(...args)) return 
+        fn(...args)
+    }
+}
 function wrapFactory(before, after) {
     if (!after) after = before
     return function lambda(fn) {
@@ -9665,14 +9895,20 @@ function htmlLineFix(s) {
     return doubleReplace(s, /<\w+ (.*?)>/, /\w+ *= *\w+/g, fixer)
     ///\w+ *= *\w+| \w+(?= \w)|^\w+(?= \w)|\w+$/g, fixer)
 }
-function htmlLineParser(s) {
+function htmlLineParser(s, asVue = 1) {
     let ref = {
-        
+        t: '<transition name="fade" mode="out-in">\n\t$c\n</transition>',
+        tg: '<transition-group name="fade" mode="out-in" tag="span">\n\t$c\n</transition-group>'
     }
 
     if (/^\w\S+$/.test(s)) {
-        const className = s.replace(/\W/g, '')
-        return buildCloser2('div', {className}, s)
+        if (s == 'div') {
+            return buildCloser2('div')
+        }
+        if (s in ref) return ref[s]
+        const className = toDashCase(s.replace(/[^\w-]+/g, ''))
+        let text = asVue ? vueText(s) : s 
+        return buildCloser2('div', {className}, text)
     }
 
     let iter = new Iter(split(s, ' '))
@@ -9684,8 +9920,21 @@ function htmlLineParser(s) {
 
     while (iter.next()) {
         let value = iter.value
-        if (iter.index == 1 && HTMLTAGS.includes(value)) {
-            tag = value
+        if (iter.index == 1) {
+            if (HTMLTAGS.includes(value)) {
+                tag = value
+            }
+
+            else if (value.startsWith('.')) {
+                classNames.push(value.slice(1))
+            }
+            else if (value.startsWith('#')) {
+                tag = value.slice(1)
+            }
+
+            else if (looksLikeComponent(value)) {
+                tag = value
+            }
         }
         else if (value.startsWith('.')) {
             classNames.push(value.slice(1))
@@ -9694,9 +9943,16 @@ function htmlLineParser(s) {
             id = value.slice(1)
         }
 
+        else if (test(/^[@:]/, value)) {
+            let items = [value[0], value.slice(1)]
+            //console.log(items); throw "";
+            dataAttributes.push(vueHelper(...items))
+            //console.log(dataAttributes); throw ''
+        }
+
         else if (value.includes('=')) {
-            let [a,b] = split(value, '=')
-            dataAttributes.push(`data-${a}="${b}"`)
+            let items = split(value, '=')
+            dataAttributes.push(vueHelper(...items))
         }
         else if (value in ref) {
             const args = [classNames[0]]
@@ -9704,6 +9960,9 @@ function htmlLineParser(s) {
         }
         else {
             text = iter.items.slice(iter.index - 1).join(' ')
+            if (!text.includes(' ') && asVue) {
+                text = vueText(text)
+            }
             break
         }
     }
@@ -9724,19 +9983,11 @@ function vueLineParser2(s) {
         return buildCloser2('div', {className}, vueText(s))
     }
 
-    let items = findall(/(\S+?) *= *(\S+)|(\w+)/g, s)
-        .map((x) => x.filter((x) => x))
+    let items = match(/(\S+?) *= *(\S+)|([\w-]+)/g, s)
+        .map((x) => smallify(x.filter((x) => x)))
 
-    for (let item of items) {
-        //isArray(item) ? vueAttrParser(item) : vueItemParser(item)
-    }
-
-    //if (a in vueKnown) {
-        //a = vueKnown[a]
-    //}
-
-    console.log(items); throw ''
     let iter = new Iter(items)
+    let ref = {}
     let tag = 'div'
     let id = ''
     let text = ''
@@ -9781,7 +10032,7 @@ function buildCloser2(tag, attrs, text) {
     //console.log(arguments)
     const A = toOpeningTag2(tag, attrs)
     const B = toClosingTag(tag)
-    if (text) {
+    if (text || looksLikeComponent(tag)) {
         return A + text + B + '\n$c'
     } else {
         return A + TABINPUT + B
@@ -9790,7 +10041,7 @@ function buildCloser2(tag, attrs, text) {
 function toOpeningTag2(tag, attrs) {
     let s = ''
     let spaces = ' '
-    for (let [k, v] of Object.entries(attrs)) {
+    for (let [k, v] of Object.entries(attrs || {})) {
         if (!exists(v)) {
             continue
         }
@@ -9799,6 +10050,9 @@ function toOpeningTag2(tag, attrs) {
           s += attrEntry('class', v.join(' '))
         }
         else if (k == 'class' || k == 'className') {
+          if (/^[A-Z]/.test(v)) {
+              v = toDashCase(v)
+          }
           s += attrEntry('class', v)
         }
 
@@ -10162,13 +10416,12 @@ module.exports.htmlLineParser = htmlLineParser
 
 function toOpeningTag(el, attrs = '', force) {
     if (el == 'html') return '<!doctype html><html>'
-
-    if (isString(attrs)) {
+    if (isString(attrs) && !attrs.includes('=')) {
         attrs = ' class=' + doublequote(attrs)
-    } else if (attrs) {
+    } else if (isObject(attrs)) {
         attrs = reduceToString(attrs, (a, b) => {
             return b ? ` ${a}="${b}"` : a
-        })
+        }, {delimiter: ' '})
     } else {
         attrs = ''
     }
@@ -10215,7 +10468,10 @@ function divify(tag, attrs = '', x = '') {
     if (!x) x = ''
     let s = toOpeningTag(tag, attrs)
 
-    if (
+    if (tag == 'input' || tag == 'hr') {
+        
+    }
+    else if (
         isArray(x) ||
         (isString(x) && (hasNewline(x) || hasHtml(x)))
     ) {
@@ -10229,12 +10485,13 @@ function divify(tag, attrs = '', x = '') {
 }
 
 function hasHtml(s) {
-    return test(/<[a-z\/]/, s)
+    return test(/<\/?[a-z\/]/, s)
 }
 
 function toClosingTag(el) {
     const noclosers = ['input', 'hr', 'br', 'link', 'img']
     if (noclosers.includes(el)) return ''
+    if (looksLikeComponent(el)) return ''
     return '</' + el + '>'
 }
 
@@ -10310,6 +10567,9 @@ function assetObject(items, insideObject, lang = 'js') {
         }, '{\n') + '}' + ending
     )
 }
+function removeNumbers(s) {
+    return s.replace(/\d/g, '')
+}
 function assetArray(items, lang = 'js') {
     /* insideObject can be done later */
     if (items.length == 1) {
@@ -10363,10 +10623,10 @@ function forToNumber(s) {
 
 
 
-function loremSimpleMathQuestion() {
-    let a = rng(1,100)
-    let b = rng(1,100)
-    let question = `${a}+${b}`
+function loremSimpleMathQuestion(a, b) {
+    if (a == null) a = rng(1, 10)
+    if (b == null) b = rng(1, 10)
+    let question = `${a} * ${b}`
     let answer = eval(question)
     return { question, answer }
 }
@@ -10395,9 +10655,417 @@ function abbreviateObject(o) {
 //const colors = rainbow(Number(color))
 //console.log(colors)
 //console.log(divify('pre', '', 'hi\nbye'))
-        //console.log(vueLineParser('.boo submit {sdf}'))
 //toStringArgument(2)
 //console.log(toStringArgument('3'))
 //console.log(lineDitto('vv d 1 2', [1, 2]))
 module.exports.countParameters = countParameters
         //console.log(partition(gatherArgs('prosemirror-setup.js', 'prosemirror.js, prosemirror.css')))
+
+        //console.log(htmlLineParser('acorn-item @submit ref=tom if=hi show=boo v-john=hi v-bind=go style=howdy'))
+        //console.log(htmlLineParser('.vv-bbD @submit ref=bb '))
+
+
+//console.log(findall('(a)(b)', 'vab'))
+//let [vb, vn, vh] = []
+//console.log([vb])
+
+module.exports.createVariable = createVariable
+module.exports.repf = repf
+//v=new Storage()
+//v.add('v', 'b', 'h')
+//console.log(v)
+//console.log(spaceToCamel('21'))
+//x = {}
+        //console.log(addNestedProperty(x, 'a', test))
+        //console.log(addNestedProperty(x, 'a', 'c', sayhi))
+module.exports.conditional = conditional
+module.exports.addNestedProperty = addNestedProperty
+
+function extractConfig(s) {
+    let [a,b] = mreplace(/(\w+) *= *(\w+)/g, s)
+    if (b) {
+       b = reduce(b) 
+    }
+    return [a,b]
+}
+function Factory(fn, ...args) {
+    if (args.includes(null)) {
+        let [a,b] = partition(args, isNull)
+        return function lambda(s) {
+            return fn(...a, s, ...b)
+        }
+    }
+    return function lambda(s) {
+        return fn(...args, s)
+    }
+}
+    //console.log(coerceTo('gg'))
+module.exports.getParamInfo = getParamInfo
+module.exports.coerceTo = coerceTo
+//console.log(spanify('howdy pivnurt"s'))
+//spanify('sup')
+//console.log(spanify('sup'))
+
+
+// 05-17-2022 tile-match.js
+
+function generateTiles() {
+s = `
+
+    2 3
+    2 4
+    1 7
+
+    3 4
+    2 8
+    4 6
+
+    3 6
+    4 4
+    5 5
+`
+
+    let numbers = 
+        split(smartDedent(s), /\n\n+/).map((x) => findall(/(\d+) (\d+)/g, x))
+    numbers = walk(numbers, toNumber)
+    //console.log(numbers)
+//loremSimpleMathQuestion
+    //console.log(tileItUp(numbers[0]))
+    return tileItUp(numbers[0])
+    
+}
+function tileItUp(numbers) {
+    return flat(numbers.map((x) => parser(...x)))
+
+function parser(a, b) {
+    const base = mathProduct('1' + String(a) , '1' + String(b))
+    const sum = mathSum(a, b)
+    const product = mathProduct(a, b)
+    let tiles = []
+    function push(value, type) {
+        let id = base.answer
+        tiles.push( {
+            value, id, type
+        })
+    }
+    const addColor = exporter(MathColors, 'color')
+    push(addColor(base.question), 'question')
+    push(addColor(base.answer), 'answer')
+    push([addColor(sum.expression), addColor(product.expression)], 'setup')
+    return tiles 
+    return {
+        question: base.question,
+        answer: base.answer, 
+        setup: [sum.expression, product.expression]
+    }
+    /* separating the data-layer from the presentation-layer */
+}
+}
+const mathSum = mathFactory('+')
+const mathProduct = mathFactory('*')
+
+function mathEval(s) {
+    s = s.replace(/ = $/, '')
+    s = s.replace(/\\(?:cdot|times)/, '*')
+    return eval(s)
+}
+function mathFactory(operator, colors) {
+    if (operator == '*') {
+        operator = '\\cdot'
+        operator = '\\times'
+    }
+    let equalSign = ' = '
+    return function lambda(a, b) {
+        const question = `${a} ${operator} ${b}${equalSign}`
+        const answer = mathEval(question)
+        const expression = `${addEqualSign(question)}${answer}`
+        return {question, answer, expression}
+    }
+}
+
+
+
+//11 12 13 14 15
+//21 22 23 24 25
+function generateNumbers({
+   start = 1,
+   end = 9,   
+   condition = identity,
+} = {}) {
+    condition = fastFunction(condition)
+    const store = []
+    for (let i = start; i <= end; i++) {
+        for (let j = i; j <= end; j++) {
+            if (condition(i, j)) {
+                store.push([i, j])
+            }
+        }
+    }
+    return store
+}
+function mathConditionFromString(s) {
+    if (isFunction(s)) {
+        return s
+    }
+
+    return fastFunction(s)
+}
+function match(regex, s) {
+    let match
+    if (regex.flags.includes('g')) {
+        let store = []
+        while (match = regex.exec(s)) {
+            let value = matchGetter(match)
+            store.push(value)
+        }
+        return store
+    } else {
+        match = s.match(regex)
+        return matchGetter(match)
+    }
+
+    function matchGetter(match) {
+        return !match
+            ? null
+            : match.length == 1
+            ? match[0]
+            : match.length == 2
+            ? match[1] || match[0]
+            : match.slice(1)
+    }
+}
+function fastFunction(s) {
+    let variables = unique(match(/\b[abcdexyzin]\b/g, s))
+    const dict = {
+        'and': '&&',
+        'or': '||',
+    }
+    s = dreplace(s, dict)
+    let fnCode = `(${variables.join(', ')}) => ${s}`
+    return bringToLife(fnCode)
+}
+    //console.log(generateNumbers({
+        //condition: 'a + b < 10 and a * b < 10 and a > 1'
+    //}))
+
+
+
+
+s = `
+Sometimes, you will have to carry a number over.
+To enjoy reading.
+creating education games
+why did i let this happen
+
+`
+
+
+
+class TileMatch {
+    constructor(tiles) {
+        this.load(tiles)
+    }
+
+    load(tiles) {
+        if (!tiles) { return }
+        //this.tiles = shuffle(tiles)
+
+        this.tiles = tiles.map((x) => {
+            return {
+                /* type, value, id */
+                ...x,
+                active: false,
+                done: false,
+                rotation: 0,
+                style: {
+                    background: 'white',
+                    color: 'black',
+                },
+            }
+        })
+
+        this.matchLength = this.filterById(tiles[0].id).length
+        const n = Math.ceil(tiles.length / this.matchLength)
+        this.styles = generateStyles(n)
+        return this.tiles
+    }
+
+    filterById(id, match = true) {
+        return this.tiles.filter((x) => {
+            return match ? x.id == id : x.id != id
+        })
+    }
+
+    click(index) {
+        let tile = this.tiles[index]
+        if (tile.done) {
+            return 
+        }
+
+        tile.rotation += tile.active ? 1 : -1
+
+        if (tile.active) {
+            tile.active = false
+            return 
+        }
+
+        tile.active = true
+        const possibles = this.filterById(tile.id)
+
+        if (possibles.every((x) => x.active)) {
+            const style = this.styles.pop()
+            possibles.forEach((x) => {
+                x.done = true
+                x.style = style
+            })
+            return true
+        }
+    }
+}
+
+
+//tm = new TileMatch()
+//tm.load(generateTiles())
+//console.log(tm.click(0))
+//console.log(tm.click(0))
+//console.log(tm.click(0))
+//console.log(tm.click(1))
+//console.log(tm.click(2))
+
+// 05-17-2022 robot
+//
+class Robot {
+    constructor() {
+    }
+    walk() {
+        
+    }
+    speak(s) {
+        // using an image bit-map
+        // is how to do it
+        // to make it funny
+        // to have no one to align with
+        // to meet people
+        // to recruit
+        // people who you vibe with?
+        // smarts are not everything
+        // smaller colleges
+        // those with a chip
+    }
+}
+function generateStyles(n) {
+    //const backgrounds = Object.values(tailwind)
+    const backgrounds = roygbiv
+    let color = 'white'
+    return range(n).map((item, i) => {
+        return {
+            color: color,
+            background: backgrounds.pop()
+        }
+    })
+}
+
+
+// 05-18-2022 
+
+
+
+// give leeway.
+// mistakes of discipline
+//
+//console.log(infuseKatexColors('x^2 + 3', {2: 'red'}))
+
+class MathColors {
+    constructor() {
+        this.colors = rainbow()
+        this.ref = {}
+    }
+    export(s, creator) {
+        s = toLatex(s)
+        s = infuseKatexColors(s, this.ref)
+    }
+
+}
+
+class EquationDisplay {
+    load(equation, ref, colors) {
+        this.template = this.cache.get(equation, () => nerdamer.convertToLaTeX(equationLibrary[equation]))
+        this.colors = colors
+        if (colors) {
+            this.template = infuseKatexColors(this.template, colors)
+        }
+        this.ref = ref
+    }
+    constructor() {
+        this.cache = new Cache()
+        const equationLibrary = {
+            'circle': '(x - h)^2 + (y - k)^2 = r^2',
+            '1213': '1a * 1b = 1cd',
+        }
+    }
+    toKatex() {
+        let template = infuseVariables(this.template, this.ref)
+        console.log(template)
+        return template
+    }
+    color(s) {
+    }
+}
+
+//console.log(randomColor())
+//console.log(opposite(true))
+//console.log(divify('div', {a:1}, 'hi'))
+//console.log(latexTemplater('22 + 3 + 22 2', [(x) => 'hi' + x, 'xx']))
+//console.log(latexTemplater('22 + 3 + 22 2', {22: 'foo'}))
+module.exports.latexTemplater = latexTemplater
+//console.log(253 == "253")
+        //console.log(htmlLineParser('date-expr'))
+        //console.log(toDashCase('date-expr'))
+//console.log(datePhrase())
+//console.log(htmlLineParser('div'))
+module.exports.lineFilter = lineFilter
+//console.log("1" + 2)
+function katexAttributer(a, b, c) {
+    return `\\${a}{${b}}{${c}}`
+}
+
+function parser(a, b, colorA, colorB) {
+    const cA = (x) => katexAttributer('textcolor', colorA, x)
+    const cB = (x) => katexAttributer('textcolor', colorB, x)
+    const creator = (x, args) => latexTemplater(x.question, args)
+    let topArgs = [null, cA, null, cB]
+    let botArgs = [cA, cB]
+
+    const base = mathProduct('1' + a , '1' + b)
+    const sum = mathSum(a, b)
+    const product = mathProduct(a, b)
+    //console.log(base, sum, product)
+    let top = creator(base, topArgs)
+    let q1 = creator(sum, botArgs)
+    console.log(q1)
+    let q2 = creator(product, botArgs)
+    console.log(q2)
+}
+
+//console.log(parser(2, 3, 'red', 'blue'))
+
+function rungen(Generator, ...args) {
+    let x = new Generator(...args)
+    const value = x.generate()
+    console.log(value)
+    return value
+}
+
+function katexColorer(x, color) {
+    return katexAttributer('textcolor', color, x)
+}
+function addColors(s, ...colors) {
+    return latexTemplater(s, colors)
+}
+//
+//const addEqualSign = conditional(addf(' = '), /[^\s=] *$/)
+//rungen(MathDrill)
+module.exports.intersects = intersects
+
+// Math Warmup
+

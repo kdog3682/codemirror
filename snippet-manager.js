@@ -139,7 +139,7 @@ class SnippetManager {
         /* not in use ... it is the global one being used */
         this.cache = new Cache()
         this.baseSnippets = SnippetManager.toSnippets(
-            SnippetLibrary[lang]
+            SnippetLibrary[lang] || {}
         )
         if (lang == 'js') {
             this.solSnippets = jsSnippets1a
@@ -159,7 +159,8 @@ class SnippetManager {
         //console.log(this.snippets)
     }
 
-    css(context) {
+    /* deprecating it */
+    _css(context) {
         let word = context.matchBefore(/\w*$/)
         console.log(word)
         let line = context.state.doc.lineAt(context.pos)
@@ -204,6 +205,11 @@ class SnippetManager {
     js(context) {
         let before = context.matchBefore(/.*/)
         let text = before.text
+
+        if (test(/^@/, text)) {
+            let from = before.to + 1
+            return functionCompleter(from)
+        }
 
         if (test(/^ *\S+$/, text)) {
             /* only has starting spaces */
@@ -404,6 +410,28 @@ function filteredSnippets(snippets, word) {
     })
 }
 //
+//
+
+function functionSnippets(apply) {
+    const functions = assets.windowFunctions
+    return Object.entries(assets.windowFunctions).map(([a,b], i) => {
+        return {label: a, value: b.toString(), apply}
+    })
+}
+
+function completionFactory(snippetFn, applyFn) {
+    let snippets = snippetFn(applyFn)
+    return function lambda(s) {
+        return {
+            from: from,
+            options: snippets,
+            validFor: /[\w$]*$/,
+        }
+    }
+}
+
+const functionCompleter = completionFactory(functionSnippets)
+
 function autoCompleter(from, snippets) {
         return {
             from: from,
@@ -411,10 +439,6 @@ function autoCompleter(from, snippets) {
             validFor: /[\w$]*$/,
         }
 }
-        /* why ... bbb ... */
-        /* i wonder why ... */
-        /* i wonder why i am unable to ... */
-        /* the legos are added afterwards theyraernt there at the start */
 
 function applySnippet(cm, c, f, t) {
     let template = c.template

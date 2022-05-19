@@ -36,12 +36,26 @@ const AnnyangDictionary = {
 }
 
 class Annyang {
+    set lang(lang) {
+        if (!lang) return 
+        if (lang == 'chinese') lang = 'zh-CN'
+        else if (lang == 'french') lang = 'zh-CN'
+        else if (lang == 'spanish') lang = 'zh-CN'
+        else if (lang == 'english') lang = 'us-EN'
+        this.recognition.lang = lang
+    }
+    get lang() {
+        return this.recognition.lang
+    }
+
     constructor(callback = console.log) {
         this.callback = callback.callback ? 
             callback.callback.bind(callback) :
             callback
 
+        this.lastTime = 0
         this.count = 0
+        this.debug = false
         this.setup()
     }
     wait(...args) {
@@ -59,7 +73,8 @@ class Annyang {
         this.recognition.onerror = this.onerror.bind(this)
     }
     init() {
-        const recognition = new webkitSpeechRecognition()
+        //const recognition = new webkitSpeechRecognition()
+        const recognition = getRecognition()
         recognition.lang = 'en-US'
         recognition.continuous = true
         recognition.interimResults = false
@@ -86,20 +101,28 @@ class Annyang {
         this.count += 1
     }
     onstart() {
-        this.startTime = timegetter('onstart')
+        this.startTime = Date.now()
+        console.log('stttttttttarted', this.startTime)
     }
-    onerror() {
-        console.log('error')
+    onerror(e) {
+        if (e.error == 'not-allowed') {
+            if (this._stopOnce == true) {
+                this._stopOnce = false
+                speak('gogo')
+            } else {
+                this._stopOnce = true
+            }
+        }
     }
+
 
     onend() {
         this.again()
     }
 
     again() {
-        if (this.debug) {
-            speak('debug stop')
-            this.stop()
+        if (this._stopOnce) {
+            this._stopOnce = false
             return 
         }
 
@@ -109,14 +132,25 @@ class Annyang {
     }
 
     onresult(e) {
-        let s = e.results[e.resultIndex][0].transcript
+        let data = e.results[e.resultIndex][0]
+        let s = data.transcript
         if (!s) return
+        let timestamp = Date.now()
+        let timeDelta = Math.round(timestamp - this.lastTime)
+        this.lastTime = timestamp
+        if (this.debug) console.log({beforeParse: s})
         s = mergeSingleLetters(s.toLowerCase())
         s = splitSpellcheck(s, AnnyangDictionary)
-        const regex = /(\n|enter|e?nt|auntie)$/
-        const [text, enter] = mreplace(regex, s)
-        this.callback(text, enter)
+        if (this.debug) console.log({afterParse: s})
+        const regex = /(\n|enter|e?nt|(?:next|new) line|auntie)$/
+        let [text, enter] = mreplace(regex, s)
+        if (this.debug) console.log({afterAfterParse: text})
+        if (text == '' || enter) enter = true
+        this.callback(text, enter, timeDelta)
     }
 }
 
 
+function getRecognition() {
+    return new (window.SpeechRecognition || window.webkitSpeechRecognition || window.mozSpeechRecognition || window.msSpeechRecognition)();
+}

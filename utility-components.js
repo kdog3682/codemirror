@@ -95,26 +95,23 @@ const HelloWorld = {
 const IframeComponent = {
     props: ['value'],
     template: `<iframe :srcDoc="value" ref="iframe" class="iframe"></iframe>`,
-    template: `<iframe ref="iframe" class="iframe"></iframe>`,
+    //template: `<iframe ref="iframe" class="iframe"></iframe>`,
     watch: {
-        value(val) {
-            toIframe(this.$el, val)
-        }
+        //value(val) {
+            //toIframe(this.$el, val)
+        //}
     },
     methods: {
         keydown(e) {
-            z = this
-            //console.log(window.parent.test)
-            //console.log(window.parent.app)
-            console.log('hiiiiiiiiiiiiiiiiiii')
-            y = window.parent.app
-            console.log(e)
-            //this.$parent.displayManager.exit('iframe')
+            console.log(typeof app)
+            console.log(typeof app100)
+            console.log('hiiiiiiiiiiiiiiiiiii from keydon')
         },
 
         click() {
-            console.log('clicked the iframe leavinggg')
-            this.$parent.displayManager.exit('iframe')
+            console.log('clickkkk')
+            //console.log('clicked the iframe leavinggg')
+            //this.$parent.displayManager.exit('iframe')
 
         },
         unload() {
@@ -125,24 +122,26 @@ const IframeComponent = {
         },
 
         load() {
-            console.log('looooooaaaaaaaaaaaaaded')
+            console.log('looooooaaaaaaaaaaaaaded iframe')
+            if (app.vtc.running) {
+              app.vtc.override = createIframeCallbacks(this.iframe)
+            }
         },
     },
     async mounted() {
         const iframe = this.$el.contentWindow
+        this.iframe = iframe
         //iframe.addEventListener('click', this.click.bind(this))
-        //iframe.addEventListener('load', this.load.bind(this))
+        iframe.addEventListener('load', this.load.bind(this))
         //iframe.addEventListener('unload', this.unload.bind(this))
         //iframe.addEventListener('error', this.error.bind(this))
         //iframe.addEventListener('keydown', this.keydown.bind(this))
         await sleep(50)
         iframe.focus()
-        //console.log('hello from IframeComponent')
-        //console.log('focused')
-        this.iframe = iframe
     },
     beforeDestroy() {
         console.log('destroyer of worlds')
+        //this.$refs.iframe.$el.contentWindow.innerHTML = ''
     },
 }
 

@@ -298,3 +298,8 @@ heart = `
 `
 
 assets.css.heart = heart
+assets.windowFunctions = {
+    howdy() {
+        console.log('hiii')
+    },
+}

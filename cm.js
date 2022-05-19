@@ -1,3 +1,111 @@
+//
+function removeTidBits(s) {
+    return s.replace(/^\S{1,3}$/gm, '')
+}
+function createRefs() {
+    splitterOfWindowFunctions(removeTidBits(removeJavascriptComments(RefString)))
+}
+
+function splitterOfWindowFunctions(s) {
+    function parseMessage(s) {
+        if (s.includes('$')) {
+            return quotify(s.replace(/\$(\w+)/, '${$1}'))
+        }
+        return quoteIfNeeded(s)
+    }
+
+    const extractMessageRE = / +\.\.\. +(?:message *= *)?(.+)/
+    const extractMessage = Factory(mreplace, extractMessageRE)
+    const quoteIfNeeded = conditional(singlequote, /^[a-zA-Z]/)
+    const firstThreeLines = Factory((x, n) => linegetter(x).slice(0, n).join('\n'), null, 3)
+
+    const _testCases = [
+        /^alias/, (s, windowKey) => {
+            let [key,prevKey] = search(/\w+ *(\w+) +(\w+)/, s)
+            b = window[windowKey][prevKey]
+            addNestedProperty(window, windowKey, key, b)
+        },
+
+        /^\w+:/, (s, windowKey) => {
+            let [key, fnKey] = splitonce(s, /: +/)
+            let b = window[fnKey]
+            addNestedProperty(window, windowKey, key, b)
+        },
+
+        /./, (s, windowKey) => {
+            let [text, message] = extractMessage(s)
+            if (s.startsWith('save')) {
+                
+            }
+
+            let [key, value] = splitonce(text, / +/)
+            let params
+            if (isWord(value)) value += '()'
+            if (key.includes('(')) {
+                ;[key, params] = mreplace(/\(.+\)/, key)
+                params = getWords(params, {min: 1})
+            }
+            let body = value
+
+            if (message == 253) {
+                console.log('253 still to do', key)
+            }
+
+            else if (message == 254) {
+                //body = `return ({value: ${body}, caller: ${key}})`
+            }
+            else if (message) {
+                body += '\nreturn ' + parseMessage(message)
+            }
+
+            let prefix = '__'
+            let fnText = toStringFunction(prefix + key, params, body)
+            //console.log(fnText)
+            let fn = bringToLife(fnText)
+            addNestedProperty(window, windowKey, key, fn)
+        },
+
+    ]
+    const testCases = partition(_testCases, 2)
+
+    /* it starts here */
+    const items = split(s, /^#(.+)/m)
+
+    const pairs = partition(items, 2)
+    const value = pairs.forEach(([a,b], i) => {
+        a = a.trim()
+        if (b.trim() == 'null') {
+            addNestedProperty(window, a, {})
+            return 
+        }
+        if (a.includes('=')) {
+            let [key, stuff] = extractConfig(a)
+        }
+        split(b, /\n+/).map((line) => parser(line, a))
+    })
+
+    function parser(s, windowKey) {
+        for (let [a,b] of testCases) {
+            try {
+                if (test(a, s)) return b(s, windowKey)
+            }
+            catch(e) {
+                console.log(e.toString())
+                console.log([s, 'hiii'])
+                throw ''
+            }
+        }
+    }
+}
+
+
+async function testCompletion(s, lang = 'js') {
+    e.templater(s)
+    startCompletion(e.cm)
+    await sleep(200)
+    acceptCompletion(e.cm)
+}
+
 //const hic = 'const Hic = {template,}'
 const ModalComponent = {
     name: 'ModalComponent',
@@ -37,11 +145,30 @@ const ConsoleComponent = {
 
 
 
+class ExtendedEditor  {
 
-
-
-
-class ExtendedEditor extends StorageSystem {
+    css(val) {
+        this.buffers.open('styles.css', val)
+    }
+    js(val) {
+        this.buffers.open('index.js', val)
+    }
+    html(val) {
+        this.buffers.open('index.html', val)
+    }
+    setMode(s) {
+        const dict = {
+            'htv': 'html-to-vue',
+            'htj': 'html-to-js',
+            'jth': 'js-to-html',
+        }
+        let mode = dict[s] || s
+        app.frameAndMirror = mode == 'vanilla-js'
+        let lang = search(/js|css|html/, mode)
+        this[lang]()
+        console.log('editor mode: ' + mode)
+        this.mode = mode
+    }
     restoreState() {
         setTimeout(() => {
             autoFocus(this.editor)
@@ -58,10 +185,10 @@ class ExtendedEditor extends StorageSystem {
       this._savedState = {cursor, buffer}
     }
     constructor() {
-        super()
-        const preExisting = super.get()
+        //super()
+        //const preExisting = super.get()
         //console.log({preExisting})
-        this.buffers = new Buffers(preExisting)
+        this.buffers = new Buffers()
         this.editor = this.buffers.init('index.js')
         this.cm = this.editor
         this.jumplist = new JumpList()
@@ -69,8 +196,8 @@ class ExtendedEditor extends StorageSystem {
 
         this.defineProperties()
         this.assignAliases()
-        this.defineBufferCommands()
-        this.defineExtendedCommands()
+        //this.defineBufferCommands()
+        //this.defineExtendedCommands()
         autoFocus(this.cm, 100)
     }
     get lang() {
@@ -78,6 +205,8 @@ class ExtendedEditor extends StorageSystem {
     }
 
     defineExtendedCommands() {
+        //return
+        console.log('extended cmds not in service')
         for (let [k, v] of Object.entries(ExtendedCommands)) {
             this[k] = v.bind(this)
         }
@@ -113,17 +242,32 @@ class ExtendedEditor extends StorageSystem {
 }
 
 
-class Buffers {
+class Buffers extends EventEmitter {
+
+    loadBufferGroup(obj) {
+        let lastKey
+        for (let [k, v] of Object.entries(obj)) {
+            lastKey = k
+            if (this.has(k)) continue
+            const state = this.create(name, text)
+            this.set(k, state)
+        }
+
+        if (lastKey) {
+            this.editor.setState(this.get(lastKey))
+            this.nameIt(key)
+        }
+    }
 
     append(buffer, value) {
         if (!exists(value)) {
+            console.log('nnoremap append /* nnoremap value */')
             return 
         }
         value = '\n' + value
 
         const isCurrent = this.currentBuffer == buffer
-        const state = isCurrent ? 
-            this.state : this.get(buffer)
+        const state = isCurrent ? this.state : this.get(buffer) || this.create(buffer)
         const from = state.doc.length
 
         const newState = state.update({
@@ -216,13 +360,16 @@ class Buffers {
         this.currentBuffer = ''
         this.open(file)
     }
-    constructor(store) {
+    constructor(store, options = {lineWrapping: true}) {
+        super()
         this.names = []
         mixin(this, StorageMixin, 'reduce', 'get', 'set', 'has')
         this.store = reduceObject(store, this.create.bind(this))
         this.helpers = {}
-        //this.extensions = basicSetup.concat(this.man.extensions)
         this.extensions = basicSetup
+        if (options.lineWrapping) {
+            this.extensions.push(EditorView.lineWrapping)
+        }
     }
     init(key = 'index.js') {
         if (this.has(key)) return
@@ -233,6 +380,7 @@ class Buffers {
 
         const state = this.create(key, '')
         this.editor = new EditorView({ state, parent })
+
         this.nameIt(key)
         return this.editor
     }
@@ -240,6 +388,7 @@ class Buffers {
     onOpen(from, to) {
         const A = from && getExtension(from)
         const B = to && getExtension(to)
+        this.emit('buffer-change', B, A)
         if (!A) return 
         if (A == 'html' && B == 'css') {
             const state = this.get(A)
@@ -307,12 +456,9 @@ class Buffers {
         this.lang = getExtension(name)
 
         const baseLanguage = langExtensions(this.lang)
-        //console.log('hi')
-        const langRef = languageRef[this.lang] || {}
+        const langRef = languageRef[this.lang]
         const sm = new SnippetManager(this.lang)
         const autocomplete = sm.factory()
-        //console.log('vv')
-        //console.log(autocomplete)
 
         const man = new Man({
             autocomplete,
@@ -341,8 +487,9 @@ class Buffers {
             extensions,
             selection, 
         })
+        const wordCache = new Cache()
 
-        this.helpers[this.lang] = [sm, man]
+        this.helpers[this.lang] = [sm, man, wordCache]
         return state
     }
     resetAll(x, y) {
@@ -362,6 +509,7 @@ class Buffers {
 
     get sm() { return this.helpers[this.lang][0] }
     get man() { return this.helpers[this.lang][1] }
+    get wordCache() { return this.helpers[this.lang][2] }
     get state() { return this.editor.state }
 
     toJSON() {
@@ -462,7 +610,6 @@ class Man {
         this.set(key)
     }
     set(key, value) {
-        //console.log('setting ', key, value)
         const effects = this.create(key, value, 'reconfigure')
         e.cm.dispatch({ effects })
     }
@@ -470,17 +617,7 @@ class Man {
 
 
 function cmCurrentFunction(cm) {
-    try {
-        return bringToLife(cmBlock(cm).text)
-    }
-    catch(e) {
-        console.log(e.stack)
-    }
-}
-
-const ExternalEditorCommands = {
-    runTestHandler,
-    /* in progress */
+    return bringToLife(cmBlock(cm).text)
 }
 
 function runTestHandler() {
@@ -493,69 +630,45 @@ function runTestHandler() {
 }
 
 
-function runAbc() {
-    console.log('hi')
-}
-function runAbcdocument() {
-    console.log('hd')
-}
-
-function runAbcdocumente() {
-    console.log('hde')
-}
-function runabc() {
-    console.log('abc')
-}
-function runTab() {
-    console.log('hitab')
-}
-
-function dlcss() {
-    const text = e.buffers.getString('styles.css')
-    download('styles.css', text)
-}
-
-function toggleReadOnly2() {
-    const man = e.buffers.man
-    console.log('toglging read only')
-    if (e.readOnly) {
-        console.log('hiiiii')
-        e.readOnly = false
-        man.resetAll('inputHandler')
-    } else {
-        e.readOnly = true
-        console.log('setting vim')
-        e.buffers.setAll('inputHandler', vimInputHandler)
-    }
-}
 
 
-function toggleReadOnly(n) {
-    return 
-    const man = e.buffers.man
-    const readOnly = man.valueOf('readOnly')
-    if (n == -1) {
-        if (readOnly == true) {
-            man.set('readOnly', !readOnly)
-        }
-        return
-    }
 
-    man.set('readOnly', !readOnly)
-    toggleKeyBinding(man, readOnly)
-    return readOnly
-}
 
-function toggleKeyBinding(man, readOnly) {
-    man.set('vimkeys', readOnly ? VimKeyBindings : null)
-}
 
-// the update cycle ...
-function eRunner() {
-        vuecmCodeRunner()
-}
+
 
 function eDownloader() {
+    const downloadRef = {
+        'css-to-html': function ({html, js, css}) {
+            css = aggregateCSS(css)
+            download('buffers.json', {'next.css': css})
+        },
+        'vanilla-html': function ({html, js, css}) {
+            css = aggregateCSS(css)
+            download('buffers.json', {'next.css': css})
+        },
+
+        'html-to-vue': function ({html, js, css}) {
+            js = js.replace(/'.*?' \/\/ ph/, "''")
+            js = js.replace(/^app.+/m, '')
+            css = aggregateCSS(css)
+            const name = removeNumbers(toDashCase(getFunctionName(js)))
+            const data = {
+                [name + '.js']: js,
+                [name + '.css']: css,
+            }
+            download('buffers.json', data)
+        }
+    }
+
+    let downloader = downloadRef[e.lang] || downloadRef[e.mode]
+    if (downloader) {
+        return downloader(e.buffers.toObject())
+    }
+
+    speak('not done yet')
+    return 
+
     let buffers = e.buffers
     buffers.update()
     const store = buffers.toObject()
@@ -567,6 +680,7 @@ function eDownloader() {
     popOpen(htmlString)
     download('buffers.html', htmlString)
 }
+
 const {
     cursorCharRight,
     cursorLineBoundaryForward,
@@ -577,20 +691,26 @@ const {
     cursorGroupLeft,
 cursorGroupRight,
 } = CodeMirrorCommands
+function globalRefresh(cm) {
+    cmClipboard(cm)
+    window.reload()
+}
 const EditorKeyBindings = [
-    { key: 'Tab', run: runTab },
+    { key: 'Mod-r', run: globalRefresh, preventDefault: true },
     { key: 'Escape', run: globalEscape },
+    { key: 'Tab', run: globalTab },
     { key: 'Alt-f', shift: unfoldCode, run: cmFold, preventDefault: true },
     { key: 'Enter', run: globalEnter },
     { key: 'Ctrl-ArrowLeft', run: cursorLineBoundaryBackward },
+    { key: 'ArrowLeft', run: CodeMirrorCommands.cursorCharLeft, shift: CodeMirrorCommands.selectGroupLeft },
+    { key: 'ArrowRight', run: CodeMirrorCommands.cursorCharRight, shift: CodeMirrorCommands.selectGroupRight },
     { key: 'Ctrl-ArrowRight', run: cursorLineBoundaryForward },
     //{ key: 'ArrowLeft', shift: cursorCharLeft, run: cursorGroupLeft },
     //{ key: 'ArrowRight', shift: cursorCharRight, run: cursorGroupRight },
-    { key: 'Ctrl-z', shift: undo, run: redo, preventDefault: true, },
+    { key: 'Ctrl-z', shift: CodeMirrorHistory.undo, run: CodeMirrorHistory.redo, preventDefault: true, },
     { key: 'Ctrl-d', run: eDownloader, preventDefault: true},
     { key: 'Ctrl-=', run: () => e.next() },
-    //{ key: '`', run: eRunner },
-    { key: 'K', run: vuecmCodeRunner, preventDefault: true },
+    //{ key: 'K', run: vuecmCodeRunner, preventDefault: true },
     { key: 'Backspace', run: globalBackspace, preventDefault: true },
     { key: 'ctrl-k', run: vuecmCodeRunner, preventDefault: true },
     { key: 'Ctrl-0', run: cmPretty },
@@ -702,8 +822,7 @@ const VimModes = {
         </div>
     `,
     mounted() {
-        console.log('hi from VimModes')
-        cssLoader(cssParser('vim-modes', 'p5 aic flex jcs a b0 r0 cmb7 fs18 h60px w240px fw600 sans'))
+        cssLoader(cssParser('vim-modes', 'p5 aic flex jcs a b0 r0 cmb7 fs18 h60px w240px fw600 sans z1000'))
         cssLoader(cssParser('visual', 'fcb7 mr6'))
         cssLoader(cssParser('normal', 'fcg7 mr6'))
     }
@@ -772,6 +891,7 @@ const CodeMirrorComponent = {
     },
     data() {
         return {
+            frameAndMirror: false,
             iframeKey: 0,
             codemirror: true,
             frameKey: 0,
@@ -801,7 +921,7 @@ const CodeMirrorComponent = {
             //<div v-show="!codemirror"  class="app-prosemirror"></div>
     template: `
         <div class="app">
-          <div class="editor-container" v-show="displays.codemirror">
+          <div class="editor-container" v-show="frameAndMirror || displays.codemirror" :style="frameAndMirror && {width: '70%', position: 'absolute', top: 0, left: '30%'}">
             <div v-show="codemirror" class="app-codemirror"></div>
           </div>
 
@@ -809,9 +929,11 @@ const CodeMirrorComponent = {
                       v-show="normalMode || visualMode"
                       :mode="normalMode ? 'normal' : 'visual'"
                       :modeString="modeString"/>
+
             <iframe-component 
+                :style="frameAndMirror && {position: 'absolute', left: 0, width: '30%', top: 0}"
                 ref="iframe"
-                v-show="displays.iframe"
+                v-show="frameAndMirror || displays.iframe"
                 :key="frameKey"
                 :value="computedHtml"/>
             <console-component 
@@ -838,25 +960,31 @@ const CodeMirrorComponent = {
         this.modeString = '' 
         this.fnMode = false
         this.LEADER_KEY = ';'
-        //iframeParentListener((x) => {
-           //console.log('hi listening from aprent', x)
-        //})
 
         this.config = {
+            uploadVoiceLogs: false,
             delay: 0,
         }
 
-        //this.config = new InfiniteStorage()
-        //this.config.set('save', 'location', 'voice')
         this.wm = new WindowManager()
         //this.clock = new Clock()
+
+        this.editor = new ExtendedEditor()
+        let lang = this.editor.lang
+        this.editor.buffers.on('buffer-change', (lang, old) => {
+            if (this.vtc.running) {
+                this.vtc.setArgParse(ArgParserRef[lang])
+                speak(lang)
+            }
+        })
+
         this.vtc = new VoiceToCommand({
             autoStart: false,
             defaultCallback: cmVoiceCallback,
-            commands: voiceToCommandLibrary,
+            argParse: ArgParserRef[this.editor.lang],
+            commands: VoiceCallbacks,
         })
 
-        this.editor = new ExtendedEditor()
         e = this.editor
 
         this.displayManager = new VueDisplayManager({
@@ -926,86 +1054,61 @@ function fixKey(s) {
     if (match) return 'Ctrl-' + match
     return split(s, '').join(' ')
 }
-//console.log = display
-const VimKeyBindings = Object.entries(VimKeyBindingRef).map(([key, run]) => ({key: fixKey(key), run: () => {
-    console.log('hi from vimbinding', key)
-    let message = run()
-    if (message == 2) {
-        app.flash(key)
-    }
-    return true
-}}))
+
+
+createRefs()
 const languageRef = createLanguageRef()
+const autoload = autoLoadFactory(uploadCompleteState)
 launch(CodeMirrorComponent)
 
-async function zmounted3() {
-    //app.mode = 'js'
-    await sleep(200)
-    //if (isBrowser()) loadCompleteState()
-    //await testcsspretty()
-    //await sleep(300)
-    //setupStuff()
-    //vuecmCodeRunner()
-    //await sleep(200)
-    //eDownloader()
-    //await testCompletion('it#', 'js')
-    //await testCodeRunner()
-    //ecmInfo(1)
-}
+function autoLoadFactory(key) {
+    let upload = false
+    let config
 
-async function testCompletion(s, lang = 'js') {
-    e.templater(s)
-    startCompletion(e.cm)
-    await sleep(200)
-    acceptCompletion(e.cm)
-}
-
-function setupStuff() {
-    let html = '<p class="sugar">hii</p>'
-    let css = '.sugar {\ncolor: red\n}'
-    e.html(html)
-    e.css(css)
-}
-
-async function testcsspretty() {
-
-s = `
-.adbc > p:focus {
-    background: red; 
-}
-
-.abc .voo > .nn p {
-    background:blue;
-    background:  yel   ;
-}
-`
-    e.css()
-    e.templater(s)
-    //cmPretty(e.cm)
-    //console.log(getConstructorName(e.cm.state))
-    //throw ''
-    cmRemoverFactory(['abc'], 'css')(e.cm)
+    window.addEventListener('beforeunload', () => {
+        setStorage('autoload', config)
+    })
     
+    return function lambda(s) {
+        if (s == null) {
+            config = getStorage('autoload')
+            return config
+        } else if (s) {
+            key()
+            config = true
+        }
+        else {
+            config = 0
+        }
+    }
 }
 
+async function zmounted3() {
+    return 
+    await sleep(200)
+    app.vtc.annyang.debug = true
 
-async function testCodeRunner() {
-s = `
-//console.log(getStylesheets())
-const box = document.querySelector(".box")
-//box.style.background = 'red'
-//box.style.width = '50px'
-//box.style.height = '50px'
-//console.log(box)
-//f g g#
-`
-//s="console.log('hi')"
-    //e.buffers.open('notes.js')
-    //e.templater(s)
-    //await sleep(300)
-    //dictation()
-    //visualHandler('wd g h')
-    //handleNormalMode('wo')
+
+    //normalHandler('mode htv', 1)
+    //await sleep(200)
+    //e.templater('<p class="foo">{{hiaaaa}}</p>')
+    //e.css()
+    //e.templater('.foo {}\np > .boo {}')
+    //await sleep(200)
     //vuecmCodeRunner()
-    //app.vtc.toggle()
+    //ecmInfo(1)
+    return 
+    app.editor.setMode('vanilla-js')
+    await sleep(300)
+    //e.templater('const box = document.querySelector(".box")')
+
+    return 
+    e.js()
+    //cmReplaceWord(e.cm, 'sup')
+    //cmOpposite(e.cm)
+    //htmlEnter(e.cm)
+    //vuecmCodeRunner()
+    //viewTree()
+    await sleep(1400)
 }
+

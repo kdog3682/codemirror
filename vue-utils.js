@@ -111,18 +111,18 @@ class VueDisplayManager {
             this.vue.config.delay || 0
         await this.enter(key, ...args)
         if (!delay) return 
-            //console.log(delay)
-            //console.log('vvvvvvvvvvvvvvvvvvv')
         await sleep(delay)
         await this.enter(this.lastKey)
     }
 
     async doAfter(key, mode, ...args) {
+        if (this.vue.frameAndMirror) {
+            return 
+        }
         const name = key.toLowerCase() + mode
-        console.log(name)
+        console.log('VUE-DISPLAY-MANAGER-calling', name)
         const callback = this.callbacks[name]
         if (callback) {
-            console.log('calling')
             await callback(...args)
         }
     }
@@ -418,7 +418,7 @@ const VueColorBindDirective = {
 }
 
 
-const VueColorDirective = {
+const VueColorDirectiveOLD = {
     name: 'color',
     bind(el, binding) {
         assignStyle(el, {
@@ -1259,14 +1259,6 @@ const ensureDirectives = addPropertyKeyFactory('directives', '[]')
 //const injectRespondToNextPropOption = propOptionInjectionFactory('next')
 //const addVuePropKeyOnce = onceFunctionFactory(addVuePropKey)
 
-vuetify(vueDispatch)
-vuetify(VueColorDirective)
-vuetify(VueFocusItDirective)
-vuetify(VueDisableItDirective)
-vuetify(VueBoxDirective)
-vuetify(VueScrollDirective)
-
-
 //const clickPropOption = propOptionFactory('click')
 //const clickPropOption = propListenerFactory('click')
 
@@ -1323,10 +1315,6 @@ function gvi(x, simple) {
     //console.log(value)
     return value
 }
-vuetify(VueColorBindDirective)
-//
-
-//vueSetupErrorHandler()
 
 
 function renderList(h, items, component) {
@@ -1407,8 +1395,6 @@ function propagateEmit(e) {
     this.$emit(key, e)
 }
 
-vuetify(VueKatexDirective)
-
 function renderSvg(h, key, options = {}) {
     const child = {template: svgs[key]}
     return h(BaseIcon, options, child)
@@ -1428,4 +1414,73 @@ function transitionElement(h, children) {
     }
     return h('transition', props, children)
     return h('div', [h('transition', props, children)])
+}
+
+function $create(classFn) {
+    let name = '$' + getFunctionName(classFn.toString())
+    let state = this
+    if (state[name]) return state[name]
+    const fn = new classFn()
+    state[name] = fn
+    return fn
+}
+
+
+const VueRotationDirective = {
+    name: 'rotation',
+    bind(el, binding) {
+        el.style.transition = 'transform 1s'
+        el.style.transformStyle = 'preserve-3d'
+    },
+    update(el, binding) {
+        let rotation = binding.rotation
+        el.style.transform = `rotateY(${rotation * 180}deg)`
+    }
+}
+const VueColorPickerHighlightDirective = {
+    name: 'color-picker-highlight',
+    update(el, binding) {
+        let [i, j, x, y] = binding.value
+        if (i == y && j == x) {
+            //console.log([i, j, x, y])
+            modal('good to go!')
+            //scrollIntoView(el)
+            highlight(el)
+        }
+    }
+}
+
+
+const VueColorDirective = {
+    name: 'color',
+    bind(el, binding) {
+        el.style.transition = 'background 1s'
+    },
+    update(el, binding) {
+        el.style.color = binding.style.color
+        el.style.background = binding.style.background
+    }
+}
+
+const GeneratorPlugin = {
+    install(Vue, options) {
+        const generator = new QuestionController()
+        const student = new Student()
+        Vue.prototype.$generator = generator
+        Vue.prototype.$student = student
+        Vue.prototype.$create =  $create
+        vuetify(VueRotationDirective)
+        vuetify(VueColorDirective)
+        //vuetify(VueColorBindDirective)
+        //vueSetupErrorHandler()
+        vuetify(vueDispatch)
+        vuetify(VueFocusItDirective)
+        vuetify(VueKatexDirective)
+        vuetify(VueDisableItDirective)
+        vuetify(VueBoxDirective)
+        vuetify(VueScrollDirective)
+        vuetify(VueColorPickerHighlightDirective)
+
+
+    },
 }

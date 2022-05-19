@@ -384,7 +384,8 @@ function hasHtml(s) {
     return test(/<[a-z]/, s)
 }
 
-function divify(tag, attrs = '', x = '') {
+function divifyOLD(tag, attrs = '', x = '') {
+    console.log('vvv')
     if (!x) x = ''
     let s = toOpeningTag(tag, attrs)
 
@@ -401,7 +402,7 @@ function divify(tag, attrs = '', x = '') {
     return s
 }
 
-function toOpeningTag(el, attrs = '', force) {
+function toOpeningTagOLD(el, attrs = '', force) {
     if (el == 'html') return '<!doctype html><html>'
 
     if (isString(attrs)) {

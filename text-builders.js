@@ -1,4 +1,10 @@
-const legoScripts = ['utils.js', 'browser.js', 'assets.js', 'stylesheet.js', 'css-utils.js', 'ec.js', 'lego.js']
+
+// should wrap the item ...
+// give things away ... 
+// but im not ... 
+// collecting data ... allows future intuition
+
+const legoScripts = ['utils.js', 'browser.js', 'assets.js', 'stylesheet.js', 'color-utils.js', 'css-utils.js', 'ec.js', 'lego.js']
 const apple = "apple-touch-icon.png"
 const thirtytwo = "favicon-16x16.png"
 const sixteen = "favicon-32x32.png"
@@ -87,11 +93,14 @@ const metaStatements = `<meta charset="utf-8">
 
 
 const globalBaseDependencies = [
-    'vue.js',
     'utils.js',
     'browser.js',
-    'vue-utils.js',
     'normalize.css',
+    'new.css',
+]
+const vueScripts = [
+    'vue.js',
+    'vue-utils.js',
 ]
 
 const globalJavascriptLibraries = [
@@ -108,6 +117,7 @@ const globalJavascriptLibraries = [
 
 function textBuilderFactory(template, config, options) {
     function reducer(k, v) {
+        if (!v) return null
         if (HTMLDefaultBuilderConfig[k]) {
             return [k, HTMLDefaultBuilderConfig[k](v)]
         }
@@ -118,21 +128,30 @@ function textBuilderFactory(template, config, options) {
     let base = smartDedent(template || config.template)
 
     return function builder(obj, config, injectObject) {
+        //return obj
+        //console.log(obj)
+        //console.log('before')
         if (config) {
             options = Object.assign({}, options, config)
         }
+
+        if (obj.hasOwnProperty('legos')) {
+            options.legos = obj.legos
+            options.writeMetaInfo = false
+            options.useGoogleFonts = false
+            options.useFavicons = false
+        }
+       
+
         if (obj['index.js']) obj.js = obj['index.js']
         if (obj['styles.css']) obj.css = obj['styles.css']
         if (obj['index.html']) obj.html = obj['index.html']
-        //console.log(obj); throw ''
-        if (obj.inject) {
-            injectObject = obj.inject
-        }
 
         if (injectObject && lastRef && options.useCache) {
             mergeOnTop(lastRef, reduce(injectObject, reducer))
             return builderTemplater(base, lastRef)
         }
+
         if (
             obj.js && 
             options.useCache &&
@@ -142,7 +161,6 @@ function textBuilderFactory(template, config, options) {
             lastRef.js = obj.js
             console.log('returning cache value')
             const value =  builderTemplater(base, lastRef)
-            console.log(value)
             return value
         }
 
@@ -151,7 +169,7 @@ function textBuilderFactory(template, config, options) {
         }
 
         if (options.baseDependencies) {
-            const baseDependencies = obj.js ? options.baseDependencies : options.baseDependencies.filter(isCssFile)
+            const baseDependencies = (obj.vuejs || obj.js) ? options.baseDependencies : options.baseDependencies.filter(isCssFile)
             addProperty(
                 obj,
                 'baseDependencies',
@@ -160,18 +178,20 @@ function textBuilderFactory(template, config, options) {
             //console.log(obj); throw ''
         }
 
-        if (options.inferScripts && obj.js) {
-            mergeOnTop(obj, inferScripts(obj.js))
+        if (options.inferScripts && (obj.vuejs || obj.js)) {
+            obj.js ? 
+                mergeOnTop(obj, inferScripts(obj.js)) :
+                mergeOnTop(obj, inferScripts(obj.vuejs))
         }
 
         if (options.windowErrorListener) {
             obj.windowErrorListener = true
         }
 
-        if (obj.js && options.implicitVue) {
-            if (!obj.html || !obj.body) {
-                obj.vueBody = true
-            }
+        /* most times it will be triggered */
+        else if (obj.vuejs || (obj.js && test(/^\s*app/m, obj.js) || options.implicitVue && !obj.html && !obj.body)) {
+            obj.baseDependencies.push(...vueScripts)
+            obj.vueBody = true
         }
 
         if (options.useFonts) {
@@ -184,7 +204,6 @@ function textBuilderFactory(template, config, options) {
             obj.meta = metaStatements
         }
 
-
         if (options.useGoogleFonts) {
             obj.googleFonts = googleFontLinks
         }
@@ -194,6 +213,7 @@ function textBuilderFactory(template, config, options) {
         }
 
         if (options.legos) {
+            console.log('yes legos')
             mergeOnTop(obj, {
                 scripts: legoScripts.filter(notIn(obj.baseDependencies)),
                 baseDependencies: ['ec2.css']
@@ -201,7 +221,7 @@ function textBuilderFactory(template, config, options) {
             //throw JSON.stringify(obj, null, 2)
         }
 
-        if (!obj.js && obj.dependencies) {
+        if (!(obj.vuejs || obj.js) && obj.dependencies) {
             obj.dependencies = []
         }
         const ref = reduce(obj, reducer)
@@ -215,6 +235,24 @@ function textBuilderFactory(template, config, options) {
         lastRef = ref
         let value = builderTemplater(base, ref)
         value = cleanupHtml(value)
+
+        if (options.htmlTimestamp) {
+            value = jspy('html', 'comment', timestamp())
+            + '\n' + value
+        }
+
+        if (options.popup) {
+            popupPre(value)
+        }
+
+        if (options.logger) {
+            console.log(value)
+        }
+
+        if (options.debugger) {
+            console.log({value})
+            throw ''
+        }
         return value 
     }
 }
@@ -235,7 +273,7 @@ function builderTemplater(s, ref) {
 }
 
 const HTMLBuilderTemplate = `
-    <!doctype html><html>
+    <!DOCTYPE html><html lang="en">
         <head>
             $favicons
             $fonts
@@ -259,16 +297,13 @@ const HTMLBuilderTemplate = `
         <script>
             $windowErrorListener
             $vueDirectives
-            /* should be fine to have comments */
             $lastElementName
-            /* boop */
             $script
             $js
-            
+            $vuejs
         </script>
     <html>
 `
-            //$vue
 
 const HTMLDefaultBuilderConfig = {
     scripts: dependencyLoader,
@@ -297,6 +332,10 @@ function browserHtmlParser(s) {
 const globalInferenceTable = [
     /mathquill/i,
     ['jquery.min.js', 'mathquill.min.js'],
+    null,
+
+    /app\d* =/i,
+    ['vue.js'],
     null,
 
     /vuex/i,
@@ -360,18 +399,12 @@ function inferScripts(s) {
     const inferences = partition(globalInferenceTable, 3)
     const baseDependencies = []
     const vueDirectives = []
-    //return {
-        //baseDependencies, vueDirectives
-    //}
 
     for (let [a, b, c] of inferences) {
         if (a.test(s)) {
-            if (b) {
-                push(baseDependencies, b)
-            }
-            if (c) {
-                push(vueDirectives, c)
-            }
+            if (b) push(baseDependencies, b)
+            if (c) push(vueDirectives, c)
+           
         }
     }
     return {
@@ -383,12 +416,19 @@ function inferScripts(s) {
 const vuecmIframeConfig = {
     html: browserHtmlParser,
     css: browserCssParser,
+    //vuejs(s) {
+        //let name = getBindingName(s)
+        //return s + '\n\n' + callVue(name)
+    //},
     vueBody() {
         return '<div id="app100"></div>'
     },
-    //vue(name) {
-        //return `app = new Vue(${capitalize(name)}).$mount('#app100')`
-    //},
+    js(s) {
+        if (test(/^await/m, s)) {
+            return lambdaAsyncify(s)
+        }
+        return s
+    },
     windowErrorListener(bool) {
         return 
         if (!bool) return 
@@ -415,10 +455,14 @@ const htmlBuilderExtraOptions = {
     legos: true,
     useFavicons: true,
     useFonts: false,
-    writeMetaInfo: true,
-    useFavicons: true,
+    htmlTimestamp: true,
+    //useFavicons: true,
+    //writeMetaInfo: true,
     //useGoogleFonts: true,
+    //debugger: true,
     //popup: true,
+    ///* doesnt work */
+    logger: true,
 }
 const htmlBuilder = new textBuilderFactory(
     HTMLBuilderTemplate,
@@ -426,14 +470,5 @@ const htmlBuilder = new textBuilderFactory(
     htmlBuilderExtraOptions
 )
 
-const TextTemplates = {
-    'index.html': '',
-}
-
-
-function cleanupHtml(s) {
-    return s.replace(/\n\s*(?:<style>\s*<\/style>|<script>\s*<\/script>)/g, '')
-}
 
 //console.log(htmlBuilder({vue:  'zoo', js: '', dependencies: ['v.js', 'vue.js', 'z.js', 'c.js', 's.css', 'v.js', 'https://f.js']}))
-//console.log(htmlBuilder({inject: {dependencies: 'HI.js'}}))

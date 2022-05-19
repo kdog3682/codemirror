@@ -385,6 +385,22 @@ function toggleStyle(el, key) {
     let value = el.style[key]
     el.style[key] = opposite(value)
 }
+function highlight(el) {
+    const inOutOptions = {
+      duration: 500,
+      iterations: 1,
+      easing: 'ease-in-out',
+      direction: 'alternate',
+      fill: 'forwards',
+    }
+
+    el.animate([
+        {
+            opacity: 0.3,
+            offset: 0.5,
+        }
+    ], inOutOptions)
+}
 function highlightElement(base, other) {
     const element = elementgetter(other)
     //console.log(element, 'xxxxxxxxxxxxxxxxxxxxx')
@@ -394,6 +410,10 @@ function highlightElement(base, other) {
     )
     toggle(base.style, 'opacity', 0, 0.5)
 }
+function logJsonBinResult(x) {
+    console.log(x)
+}
+
 function boundingTransform(x) {
     return x
 }
@@ -542,6 +562,7 @@ function staticExit(key, value) {
 }
 
 function scrollIntoView(el) {
+    //return el.scrollIntoViewIfNeeded()
     if (!elementInWindow(el)) {
         el.scrollIntoView({
             block: 'center',
@@ -651,6 +672,7 @@ function cssLoader(s, el) {
 
     s = removeAllComments(s)
     const css = cssParseFromString(s)
+    console.log(css)
     el.innerHTML ? (el.innerHTML += css) : (el.innerHTML = css)
 
     return el
@@ -852,7 +874,7 @@ function toggleAnimationFactory(key, value, duration = 1000) {
         ]
 
         el.animate(frames, options)
-        console.log('animating element', getElementName(el))
+        //console.log('animating element', getElementName(el))
     }
 }
 const flash = toggleAnimationFactory(
@@ -861,9 +883,11 @@ const flash = toggleAnimationFactory(
     2000
 )
 const appearDisappear = toggleAnimationFactory('opacity', 1)
-function flashWrite(...args) {
+
+function modal(value) {
     if (typeof __el__ == 'undefined') {
         __el__ = createElement()
+        enforce('document.body.style.position == relative')
 
         const style = {
             zIndex: '999',
@@ -887,24 +911,12 @@ function flashWrite(...args) {
         assignStyle(__caller__, 'fw600 cmb7')
         assignStyle(__value__, 'fw600 cmb7')
     }
-
-    const caller = getCaller(2)
-    let value = ''
-    switch (args.length) {
-        case 1:
-            value = `Writing: ${args[0] || 'novalue'}`
-        default:
-            value = args.join('  |  ')
-    }
-    console.log(value)
-
+    let caller = getCaller(2)
     __caller__.textContent = caller
     __value__.textContent = value
+    console.log(value)
     appearDisappear(__el__)
 }
-//const $f = debounce(flashWrite, 2000)
-
-const $f = flashWrite
 
 function jsonbin(data) {
     let id = '5f30add71823333f8f20b1bb'
@@ -978,6 +990,13 @@ function jsonbin(data) {
 function variableExists(v) {
     return eval(`typeof ${v} != undefined`)
 }
+
+function popupPre(s) {
+    const win = window.open('', 'myWindow')
+    const html = divify('pre', '', htmlEscape(s))
+    win.document.write(html)
+}
+
 
 function popup(html) {
     const attrString = 'status=0, width=700, height=700'
@@ -1295,3 +1314,53 @@ function findDescendant(parent, regex, key = 'tagName') {
         return findDescendant(child, regex)
     }
 }
+
+
+function getScriptContext(script) {
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET",script.src)
+  xhr.onreadystatechange = function () {
+    if(xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+      console.log("the script text content is",xhr.responseText);
+    }
+  };
+  xhr.send();
+}
+
+function arrowListener(state, ref, init) {
+    const prevent = ['ArrowRight', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'Enter']
+
+    if (init) {
+        isFunction(init) ? init(state) : 
+        Object.assign(state, init)
+    }
+
+    const listener = (e) => {
+        if (e.key in ref) {
+            const value = ref[e.key](state)
+            if (value || prevent.includes(e.key)) {
+                e.preventDefault()
+            }
+        }
+    }
+
+    window.addEventListener('keydown', listener)
+    return () => window.removeEventListener('keydown', listener)
+}
+
+function motion(el, positions) {
+  const options = {
+      duration,
+      easing,
+      fill: 'forwards',
+  }
+  let unit = 'px'
+
+	const keyframes = positions.map(([x,y], i) => {
+      return {
+          transform: `translate(${x}${unit}, ${y}${unit})`
+      }
+  })
+  return el.animate(keyframes, options).finished
+}
+

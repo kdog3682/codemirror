@@ -1,154 +1,32 @@
-
-function dictation() {
-        //webLoader('prosemirror.js, prosemirror.css', 'prosemirror-setup.js' ).then((x) => {
-        speak('starting dictation')
-        app.vtc.lang = 'chinese'
-        app.vtc.override = proseVoice
-        console.log(app.vtc.annyang.recognition.lang)
-        //e.buffers.open('notes.txt')
-        //app.editor.saveState()
-        //app.codemirror = false
-        //console.log('um')
-    //})
-}
-function proseVoice(s, enter) {
-    console.log([s, enter])
-    let cm = e.cm
-    let ref = voiceToCommandLibrary
-    if (s in ref) {
-        return ref[s]()
-    }
-    if (enter) s += '\n'
-    cmInsert(cm, s)
-}
-var visualActions = {
-    'c': cmDittoBlock,
-    'wd': cmDittoBlock,
-    'v': cmVisualReplace,
-    'cp': cmCopyBlock,
-    'sub': cmSubstitute,
-    'db': cmDittoBlock,
-}
 const visualRef = {
-         'tg': [
-             '<transition-group name="fade" mode="out-in">',
-             '</transition-group>',
-        ],
-         'transition': [
-             '<transition name="fade" mode="out-in">',
-             '</transition>',
-        ],
-         'else': [ 'else {', '}'],
-         'elif': [ 'else if{', '}'],
-         'if': [ 'if {', '}'],
-         'tc': [ 'try {', '} catch(e) {\n\t$c\n}'],
-         's': [ 's = `', '`'],
-         'd': [ '<div class="$c">', '</div>'],
-    }
-const voiceToCommandLibrary = {
-    dictation,
-    finished() {
-        if (app.vtc.override = proseVoice) {
-            app.vtc.toggle()
-            //app.codemirror = true
-            //app.editor.restoreState()
-            download('notes.txt' + datestamp(), e.text)
-            cmClear(e.cm)
-            //e.js()
-
-        }
-        // pop it
-        const block = popFunctionBlock()
-        e.buffers.append('finished', block)
-    },
-    pageUp() {
-        cursorDocStart(e)
-    },
-    pageDown() {
-        cursorDocEnd()
-    },
-    saveAsWindowFunction() {
-        app.wm.defineVariable(...getFunctionNameAndValue(e))
-    },
-    saveAsVoiceFunction() {
-        const fn = bringToLife(getFunctionValue(e))
-        app.vtc.indexTree.registerFunction(fn)
-    },
-    save() {
-        app.config.save.location = 'voice'
-            ? this.saveAsVoiceFunction()
-            : this.saveAsWindowFunction()
-    },
-    select() {
- CodeMirrorCommands.selectParentSyntax(e.cm)
-    },
-    stop: (x) => (app.vtc.running = false),
-    undo: () => CM['@codemirror/history']['undo'](e),
-    redo: () => CM['@codemirror/history']['redo'](e),
-    postJson() {
-        jsonbin(e.text).then((x) => speak('posted to jsonbin'))
-    },
-    getJson() {
-        e.download()
-    },
-    newPage() {
-        e.buffers.open('scratch.js')
-    },
-    mainPage() {
-        const key = getLongest(e.buffers.store)
-        e.buffers.open(key)
-    },
-    help() {
-        const self = this
-        // the self inside the object is a different self
-        // a massive modal
-        console.log('hi from help')
-        return
-        app.modal({
-            cssClass: 'help-modal',
-            transformer: (x) => x + 'hi',
-            html: true,
-            component: {
-                /* a one use item */
-                template: `
-                    names click=show 
-                    for k,v in libraries
-                        title(k, class=lib-title)
-                        for a,b in v
-                            title(a) | button(click=display)
-                            paragraph(b, :style=compute(b))
-                            /* the parens shows how it goes */
-                `,
-                data() {
-                    return {
-                        libraries: { self, imapdict },
-                    }
-                },
-                methods: {
-                    showNames() {
-                        const currentEditorNames =
-                            e.library.names
-                        this.names = currentEditorNames
-                    },
-                },
-            },
-        })
-        /* the ability to click the help ref */
-    },
+    tg: [
+        '<transition-group name="fade" mode="out-in">',
+        '</transition-group>',
+    ],
+    transition: [
+        '<transition name="fade" mode="out-in">',
+        '</transition>',
+    ],
+    else: ['else {', '}'],
+    elif: ['else if {', '}'],
+    if: ['if {', '}'],
+    tc: ['try {', '} catch(e) {\n\t$c\n}'],
+    s: ['s = `', '`'],
+    d: ['<div class="$c">', '</div>'],
 }
 
 const jsMethodSnippets = {
-   map: 'map(($child) => {\n\t$c\n})',
-  'mab': "map(([a,b], i) => {\n\t$c\n})", 
-   filter: 'filter(($child) => {\n\t$c\n})',
-  'rab': "reduce((acc, [a,b], i) => {\n\t$c\n}, {})", 
-  'rkv': "reduce((acc, [k,v], i) => {\n\t$c\n}, {})", 
-  'red': "reduce((acc, item, i) => {\n\t$c\n}, {})", 
-   iac: 'chicken', // doesnt work
-   ts: 'toString()',
-   slice: 'slice($c)',
-   animate: 'animate(keyframes, options)',
-   redab: 'reduce((acc, [a,b]) => {\n\t$c\n}, $ref)',
+    map: 'map(($child) => {\n\t$c\n})',
+    mab: 'map(([a,b], i) => {\n\t$c\n})',
+    filter: 'filter(($child) => {\n\t$c\n})',
+    rab: 'reduce((acc, [a,b], i) => {\n\t$c\n}, {})',
+    rkv: 'reduce((acc, [k,v], i) => {\n\t$c\n}, {})',
+    red: 'reduce((acc, item, i) => {\n\t$c\n}, {})',
+    iac: 'chicken', // doesnt work
+    ts: 'toString()',
+    slice: 'slice($c)',
+    animate: 'animate(keyframes, options)',
+    redab: 'reduce((acc, [a,b]) => {\n\t$c\n}, $ref)',
 }
 const jsImap = {
     '--': '_________________________',
@@ -162,119 +40,6 @@ const jsImap = {
     cl: 'console.log()',
     rt: 'return true',
 }
-
-const ExtendedCommands = {
-    jsonbin() {
-        jsonbin(this.buffers.toObject).then(console.log)
-    },
-    bigCleanup() {
-        cmPretty(this.cm)
-    },
-
-    smallCleanup() {
-        cmCleanupBlock(this.cm)
-    },
-
-    updateSnippets() {
-        const newWords = this.buffers.sm.update()
-        console.log(newWords)
-        /* should be updated in the displayer */
-
-        speak('updating snippets')
-        /* the sm is stored in an obje */
-    },
-    /* [this] refers to app.editor */
-    append(s) {
-        this.appendBelow(s)
-    },
-    goToFunction() {
-        const pos = this.pos
-        console.log(pos)
-    },
-
-    copyFunction() {
-        const pos = this.pos
-        console.log(pos)
-    },
-
-    defineBlock() {
-        const { name, text } = this.block
-        app.wm.defineVariable(name, text)
-    },
-}
-
-
-const BufferCommands = {
-
-    loadBufferGroup(obj) {
-        let lastKey
-        for (let [k, v] of Object.entries(obj)) {
-            lastKey = k
-            if (this.has(k)) continue
-            const state = this.create(name, text)
-            this.set(k, state)
-        }
-
-        if (lastKey) {
-            this.editor.setState(this.get(lastKey))
-            this.nameIt(key)
-        }
-    },
-
-    append(name, text) {
-        if (this.create(name, text)) return
-        const { Text } = CM['@codemirror/text']
-        this.state.text.append(Text.of(text.split('\n')))
-    },
-    css(val) {
-        this.open('styles.css', val)
-    },
-    js(val) {
-        this.open('index.js', val)
-        toggleReadOnly(-1)
-    },
-    html(val) {
-        this.open('index.html', val)
-    },
-    toggle() {
-        this.open(this.lastBuffer)
-    },
-    next() {
-        console.log('nexting')
-        const next = this.increment(1)
-        console.log(next)
-        this.open(next)
-    },
-    prev() {
-        this.open(this.increment(-1))
-    },
-    mainPage() {
-        const key = getLongest(this.store, (x) => {
-            return x.state.doc.length
-        })
-        this.open(key)
-    },
-}
-
-//var snippetCache = new Cache(WeakMap)
-var SnippetLibrary = {
-    html: {
-        html: 'function ${name}(x) {\n\t${}\n}',
-    },
-
-    css: {
-        css: 'function ${name}(x) {\n\t${}\n}',
-    },
-
-    js: {
-        f: 'function ${name}(x) {\n\t${}\n}',
-        g: 'functggggion ${name}(x) {\n\t${}\n}',
-        z: 'function ${name}(x) {\n\t${}\n}',
-        box: 'const box = document.querySelector("box")\n${}',
-        boxes: 'const boxes = document.querySelectorAll("boxes")\n${c}',
-    },
-}
-
 
 const firstWords = {
     ifs: 'if (isString($1)) {\n    $c\n}',
@@ -327,92 +92,14 @@ const firstWords = {
     try: 'try {\n\t$c\n}\ncatch(e) {\nconsole.log(e)\n}',
 }
 
-
-const cssPropertyNames = [
-    'align-content',
-    'align-items',
-    'align-self',
-    'all',
-    'animation-delay',
-    'animation-direction',
-    'animation-duration',
-    'animation-iteration-count',
-    'animation-name',
-    'background-clip',
-    'background-origin',
-    'background-size',
-    'background',
-    'box-shadow',
-    'box-sizing',
-    'column-count',
-    'column-fill',
-    'column-gap',
-    'columns',
-    'flex-basis',
-    'flex-direction',
-    'flex-flow',
-    'flex-grow',
-    'flex-shrink',
-    'flex-wrap',
-    'flex',
-    'opacity',
-    'order',
-    'outline-offset',
-    'overflow-x',
-    'overflow-y',
-    'perspective',
-    'pointer-events',
-    'resize',
-    'row-gap',
-    'tab-size',
-    'text-align-last',
-    'text-decoration-color',
-    'text-decoration-line',
-    'text-decoration-style',
-    'text-overflow',
-    'text-shadow',
-    'transition',
-    'word-break',
-    'word-wrap',
-    'background-attachment',
-    'background-blend-mode',
-    'background-color',
-    'background-image',
-    'background-position',
-    'background-repeat',
-    'clear',
-    'cursor',
-    'display',
-    'float',
-    'position',
-    'visibility',
-    'content',
-    'counter-increment',
-    'counter-reset',
-    'quotes',
-    'list-style-image',
-    'list-style-position',
-    'list-style-type',
-    'mix-blend-mode',
-    'outline-color',
-    'outline-style',
-    'outline-width',
-    'outline',
-    'clip',
-    'overflow',
-    'page-break-after',
-    'page-break-before',
-    'page-break-inside',
-    'color',
-    'direction',
-    'letter-spacing',
-    'text-align',
-    'text-indent',
-    'text-transform',
-    'unicode-bidi',
-    'white-space',
-    'word-spacing',
-]
+const SnippetLibrary = {}
+SnippetLibrary.js = {
+    f: 'function ${name}(x) {\n\t${}\n}',
+    g: 'functggggion ${name}(x) {\n\t${}\n}',
+    z: 'function ${name}(x) {\n\t${}\n}',
+    box: 'const box = document.querySelector("box")\n${}',
+    boxes: 'const boxes = document.querySelectorAll("boxes")\n${c}',
+}
 
 const cssPropertyValueRef = {
     'align-content': [
@@ -1177,189 +864,90 @@ const cssPropertyValueRef = {
     ],
 }
 
+const cssPropertyNames = [
+    'align-content',
+    'align-items',
+    'align-self',
+    'all',
+    'animation-delay',
+    'animation-direction',
+    'animation-duration',
+    'animation-iteration-count',
+    'animation-name',
+    'background-clip',
+    'background-origin',
+    'background-size',
+    'background',
+    'box-shadow',
+    'box-sizing',
+    'column-count',
+    'column-fill',
+    'column-gap',
+    'columns',
+    'flex-basis',
+    'flex-direction',
+    'flex-flow',
+    'flex-grow',
+    'flex-shrink',
+    'flex-wrap',
+    'flex',
+    'opacity',
+    'order',
+    'outline-offset',
+    'overflow-x',
+    'overflow-y',
+    'perspective',
+    'pointer-events',
+    'resize',
+    'row-gap',
+    'tab-size',
+    'text-align-last',
+    'text-decoration-color',
+    'text-decoration-line',
+    'text-decoration-style',
+    'text-overflow',
+    'text-shadow',
+    'transition',
+    'word-break',
+    'word-wrap',
+    'background-attachment',
+    'background-blend-mode',
+    'background-color',
+    'background-image',
+    'background-position',
+    'background-repeat',
+    'clear',
+    'cursor',
+    'display',
+    'float',
+    'position',
+    'visibility',
+    'content',
+    'counter-increment',
+    'counter-reset',
+    'quotes',
+    'list-style-image',
+    'list-style-position',
+    'list-style-type',
+    'mix-blend-mode',
+    'outline-color',
+    'outline-style',
+    'outline-width',
+    'outline',
+    'clip',
+    'overflow',
+    'page-break-after',
+    'page-break-before',
+    'page-break-inside',
+    'color',
+    'direction',
+    'letter-spacing',
+    'text-align',
+    'text-indent',
+    'text-transform',
+    'unicode-bidi',
+    'white-space',
+    'word-spacing',
+]
 
-
-const VimKeyBindingRef = {
-
-    dc() {
-        console.log('a vim key binding activation')
-        const text = e.buffers.getString('styles.css')
-        download('styles.css', text)
-        return 2
-    },
-    os() {
-        console.log('override snippet')
-        const sm = e.buffers.sm
-        sm.history = sm.snippets
-        sm.override = 1
-        const keys = filterObject(window, (k,v) => {
-          return typeof v == 'function' && 
-            v.toString().length < 250
-        }, 'keys')
-        sm.snippets = SnippetManager.toSnippets(keys)
-        return 2
-    },
-    rs() {
-        const sm = e.buffers.sm
-        if (sm.history) sm.snippets = sm.history
-        sm.override = 0
-            return 2
-    },
-
-    [':css']() {
-        e.buffers.update()
-        const text = e.buffers.getString('styles.css')
-        e.stylesheet.set(text)
-    },
-
-    ['=']() {
-        e.buffers.next()
-    },
-    Ctrlo() {
-        const data = e._store
-        e.loadBufferGroup(data)
-    },
-
-    Ctrls() {
-        /* saveBufferGroup */
-        e.upload()
-    },
-
-    CtrlS() {
-        console.log('tojson')
-        e.jsonbin()
-    },
-
-    fs() {
-        console.log('hi from fs')
-        toggleFullScreen()
-    },
-    h() {
-        console.log('going to html')
-        e.html()
-    },
-    c() {
-        e.css()
-    },
-    //d() {
-        //cmDeleteLine(e.cm)
-        //CodeMirrorCommands.deleteLine(e.cm)
-    //},
-
-    j() {
-        e.js()
-    },
-
-    d0() {
-        app.config.delay = null
-        speak('setting config delay to null')
-    },
-    d5() {
-        app.config.delay = 5
-        speak('setting config delay to 5')
-    },
-}
-
-
-const baseTreeCommands = {
-    wk(cm) {
-        cmCreateKeyFrames(cm)
-    },
-
-    wd(cm) {
-        cmCreateDitto(cm)
-    },
-}
-
-const _normalRef = {
-    voice() {
-        app.vtc.toggle()
-    },
-    deleteToStart(cm, f) {
-        return cmReplace(cm, cmLine, getTabs)
-    },
-    quotifyTheLine(cm, f) {
-        
-    },
-    clearAllBuffers() {
-        e.buffers.store = {}
-        e.editor.setState(e.buffers.currentBuffer, e.buffers.create(''))
-    },
-    mode(_, __, s) {
-        e.editor.mode = s
-        speak('setting mode ' + s)
-    },
-
-    xx() {
-        //console.log('hi')
-        //console.log(getConstructorName(e.cm))
-        cmClear(e.cm)
-    },
-}
-const globalNormalRefs = abbreviateObject(_normalRef)
-const normalRef = {
-    global: globalNormalRefs,
-    css: {},
-    js: {
-        wa(cm) {
-            cmCreateArray(e.cm)
-        },
-        wo(cm) {
-            cmCreateObject(e.cm)
-        },
-    },
-    html: {},
-}
-
-//what scares me
-//driving at night
-//making mistakes
-//dark alleyways at night
-//losing iphone
-//asking for things
-
-
-
-
-const jsTreeCommands = {
-    /* iab function  call */
-    zu(cm, f, line, spaces) {
-        cmCommonDispatch(cm, line.from - 1, ' '.repeat(spaces))
-    },
-    zd(cm, f, line, spaces) {
-        CodeMirrorCommands.insertBlankLine(cm)
-    },
-
-    wv(cm) {
-        cmCreateVue(cm)
-    },
-    wc(cm) {
-        cmCreateClass(cm)
-    },
-    wf(cm) {
-        cmCreateFunction(cm)
-    },
-}
-
-function cmTemplaterFactory(obj) {
-    return reduceObject(obj, (k, template) => {
-        return function lambda(cm, f) {
-            const line = cmLine(cm, f)
-            const args = {'c': '$c'}
-            if (template.includes('$line')) {
-                args.line = line.text
-            }
-
-            template = spicyTemplater(template, args)
-            cmDollar(cm, line, template)
-            return 1
-
-        }
-    })
-}
-const cssTreeCommands = {
-    ...cmTemplaterFactory({
-        wf: '${fixSelector($line)} {\n\t$c\n}\n'
-    }),
-}
 

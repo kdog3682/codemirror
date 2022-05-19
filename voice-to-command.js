@@ -1,15 +1,4 @@
 class VoiceToCommand extends EventEmitter {
-
-    set lang(lang) {
-        if (lang == 'chinese') lang = 'zh-CN'
-        else if (lang == 'french') lang = 'zh-CN'
-        else if (lang == 'spanish') lang = 'zh-CN'
-        else if (lang == 'english') lang = 'us-EN'
-        this.annyang.recognition.lang = lang
-    }
-    get lang() {
-        return this.annyang.recognition.lang
-    }
     activate() {
         this.running = true
     }
@@ -19,7 +8,6 @@ class VoiceToCommand extends EventEmitter {
     }
 
     createCallback(options = {}) {
-
         if (!this.callbacks) this.callbacks = {}
         this.lul.touched = false
 
@@ -32,14 +20,15 @@ class VoiceToCommand extends EventEmitter {
         const defaultCallback =
             options.defaultCallback || this.defaultCallback
 
-        const callback = (s, enter) => {
+        const callback = (s, enter, timeDelta) => {
             return this.runCallback(
                 s,
                 enter,
+                timeDelta,
                 indexTree,
                 argParse,
                 defaultCallback,
-                false,
+                false
             )
         }
 
@@ -49,28 +38,66 @@ class VoiceToCommand extends EventEmitter {
         return callback
     }
 
+    get override() {
+        /* returns the initial */
+        return this.__override
+    }
     set override(fn) {
-        if (fn == null)  {
+        if (fn == null) {
             this._override = null
-            return 
+            return
         }
         if (isString(fn)) {
             fn = this.callbacks[fn]
         } else if (isObject(fn)) {
             fn = this.createCallback(fn)
+        } else if (isFunction(fn)) {
+            this.__override = fn
+            if (
+                this.config.useChatBot ||
+                isDynamicVoiceFunction(fn)
+            ) {
+                this._dynamicFn = fn
+                this._dynamicIndex = 0
+                this._dynamicArgs = []
+                fn = (s, enter, timeDelta) => {
+                    const r = this.runDynamic(
+                        s,
+                        enter,
+                        timeDelta
+                    )
+                    return r
+                }
+            } else if (this.config.useBasicCommands) {
+                //this.__override = fn
+                fn = surpassFunction(fn, (x) => {
+                    if (x in BasicVoiceCommands) {
+                        BasicVoiceCommands[x]()
+                        return true
+                    }
+                })
+            } else {
+                //this.__override = fn
+            }
         }
 
-        this._override = (s, enter) => {
-            if (fn(s, enter) === true) {
+        this._override = (...args) => {
+            if (fn(...args) === true) {
                 this._override = null
             }
         }
     }
 
-
     toggle() {
         this.running = !this._running
-        speak('toggle vtc')
+    }
+    start() {
+        this.running = true
+        speak('starting vtc')
+    }
+    stop() {
+        this.running = false
+        speak('manual termination of vtc')
     }
     set running(value) {
         if (value) {
@@ -78,60 +105,199 @@ class VoiceToCommand extends EventEmitter {
             this._running = true
         } else {
             this.annyang.stop()
+            this.override = null
             this._running = false
+            this.config.saveLogs = false
+            this.payload = this.createPayload()
         }
+    }
+    createPayload() {
+        const payload = () => {
+            const logs = exists(this.logs) ? this.logs : null
+            this.logs = []
+            this.payload = null
+            return logs
+        }
+        return payload
     }
 
     get running() {
         return this._running
     }
-    constructor(options = {}) {
+
+    constructor(options = {}, config) {
         super()
 
         this.lul = new LoadUnload(Array)
+
+        this.logs = []
+        this.config = {
+            //useChatBot: true,
+            emitArgs: false,
+            emitCaller: false,
+            useBasicCommands: true,
+            saveLogs: false,
+            coerceToString: true,
+        }
 
         this.indexTree = new IndexTree(options.commands)
         this.argParse = options.argParse || spaceToCamel
         this.defaultCallback = options.defaultCallback
 
-        this.callback = (s, enter) => {
+        this.callback = (s, enter, timeDelta) => {
             return this.runCallback(
                 s,
                 enter,
+                timeDelta,
                 this.indexTree,
                 this.argParse,
                 this.defaultCallback,
-                true,
+                true
             )
+        }
+        if (this.config.useChatBot) {
+            this.override = chatbot
         }
 
         assignAliases(this, this.indexTree, 'register')
-
-        this.annyang = new Annyang(this)
-        this.annyang.debug = options.debug
+        try {
+            this.annyang = new Annyang(this)
+        } catch (e) {}
         if (options.autoStart) this.running = true
+    }
+    setArgParse(argParse) {
+        this.argParse = argParse
+        /* the reference persists even when u change it */
+        /* you can just change it in vivo */
+        /* u dont have to do anything super silly */
     }
 
     call(fn, args) {
-        this.emit('calling', fn.name, ...args)
-        return fn(...args)
+        const value = fn(...args)
+        if (this.config.emitCaller) {
+            this.emit('caller', fn.name)
+        }
+        if (value == 253) speak(fn.name)
+        return value
+    }
+    runDynamic(...args) {
+        let argStyle = this.config.dynamicArgStyle || 'string'
+        let manyArgs = this.config.manyDynamicArgs
+        let timeDelta = null
+        let enter = null
+        let text
+
+        if (args.length == 3) {
+            text = coerceTo(args[0], argStyle)
+            enter = args[1]
+            timeDelta = args[2] || null
+            if (manyArgs) {
+                this._dynamicArgs.push({
+                    text,
+                    timeDelta,
+                })
+            } else {
+                this._dynamicArgs = text
+            }
+        } else if (args.length == 4) {
+            this._dynamicIndex = 0
+            text = coerceTo(args[1], argStyle)
+            enter = args[2]
+            timeDelta = null
+            this._dynamicFn = args[0].fn
+            if (manyArgs) {
+                this._dynamicArgs = [{ text, timeDelta }]
+            } else {
+                this._dynamicArgs = text
+            }
+        }
+
+        let res = this.config.useApp
+            ? this._dynamicFn(
+                  app,
+                  this._dynamicArgs,
+                  enter,
+                  this._dynamicIndex++
+              )
+            : this._dynamicFn(
+                  this._dynamicArgs,
+                  enter,
+                  this._dynamicIndex++
+              )
+
+        if (res === false) {
+            /* nothing happens */
+            /* we stay on the current handler */
+            return
+        }
+
+        if (res === true) {
+            this._dynamicArgs = null
+        } else if (
+            isString(res) &&
+            this.indexTree.commands.hasOwnProperty(res)
+        ) {
+            this._dynamicFn = this.indexTree.commands[res].fn
+            this._dynamicArgs = []
+        } else if (isFunction(res)) {
+            this._dynamicFn = res
+            this._dynamicArgs = []
+        } else if (isObject(res)) {
+            if (res.next) {
+                if (isString(res.next)) {
+                    this._dynamicFn =
+                        this.indexTree.commands[res.next].fn
+                } else if (isFunction(res.next)) {
+                    this._dynamicFn = res.next
+                }
+            }
+            if (res.speak) {
+                console.log({ speaking: res.speak })
+            }
+        }
     }
 
     runCallback(
         s,
         enter,
+        timeDelta,
         indexTree,
         argParse,
         defaultCallback,
-        isSelf,
+        isSelf
     ) {
+        if (!isString(s)) {
+            if (this.config.coerceToString) {
+                s = s.toString()
+            } else {
+                warn({
+                    args: { s },
+                    severity: 'warn',
+                    message: '"$s" is not a string.',
+                    helpTopic: 'string coercion',
+                })
+            }
+        }
         if (s == 'enter') {
             s = ''
             enter = true
         }
 
+        if (this.config.saveLogs) {
+            this.logs.push([s, enter, timeDelta])
+        }
+
         if (isSelf && this._override) {
-            return this._override(s, enter)
+            return this._override(s, enter, timeDelta)
+        }
+
+        if (isNumber(s)) {
+            /* maybe a specific numericCallback */
+            return defaultCallback(Number(s))
+        }
+
+        if (this._dynamicArgs) {
+            return this.runDynamic(s, enter, timeDelta)
         }
 
         if (this.lul.touched) {
@@ -139,22 +305,26 @@ class VoiceToCommand extends EventEmitter {
             this.lul.load(args)
             if (enter || this.lul.size == this.waitArgLength) {
                 return this.call(this.lastFn, this.lul.unload())
-            } else {
-                this.emit('loading', args)
+            } else if (this.config.emitArgs) {
+                this.emit('args', args)
             }
             return
         }
 
         // ------------------------------------------
         let [ref, args] = indexTree.get(s)
+        if (!ref) return defaultCallback(argParse(args))
+        if (ref.dynamic) {
+            return this.runDynamic(ref, args, enter, timeDelta)
+        }
         args = argParse(args)
-        if (!ref) return defaultCallback(args)
         // ------------------------------------------
 
         let { fn, paramCount } = ref
         let wait = true
         if (enter) wait = false
-        else if (paramCount == 0 && args) return defaultCallback(args)
+        else if (paramCount == 0 && args)
+            return defaultCallback(args)
         else if (paramCount == 0) wait = false
         else if (paramCount > 10) wait = true
         else if (!args) wait = false
@@ -183,17 +353,18 @@ class IndexTree {
         }
     }
 
-    register(key, fn, paramCount) {
-        if (!fn) return 
+    register(key, fn, paramCount, dynamic) {
+        if (!fn) return
         this.add(key)
-        this.commands[key] = { fn, paramCount }
+        this.commands[key] = { fn, paramCount, dynamic }
     }
 
     registerFunction(fn) {
-        if (!fn) return 
+        if (!fn) return
         let [k, v] = argumentGetter(arguments) || [fn.name, fn]
-        let paramCount = countParameters(v)
-        this.register(k, v, paramCount)
+        let { params, length } = getParamInfo(v)
+        let dynamic = isDynamicVoiceFunction(fn)
+        this.register(k, v, length, dynamic)
     }
 
     add(s) {
@@ -223,10 +394,14 @@ class IndexTree {
                 break
             }
         }
-        return command
-            ? [this.commands[command], args]
-            : [null, args]
+        return [this.commands[command], args]
     }
+}
+
+function warn(obj) {
+    const message = templater(obj.message, obj.args)
+    console.log(message)
+    throw ''
 }
 
 class LoadUnload {
@@ -253,14 +428,20 @@ class LoadUnload {
     }
     unload() {
         this.touched = false
-        console.log({mode: this.mode})
-        return this.mode == String ? this.store.join('') : this.store
+        return this.mode == String
+            ? this.store.join('')
+            : this.store
     }
     toString() {
         return this.store ? this.store.join('') : ''
     }
 }
 
+function isDynamicVoiceFunction(fn) {
+    let firstParam = getParameters(fn)[0]
+    return firstParam == 'app' || firstParam == 'data'
+    /* if it has app, it should add that in maybe */
+}
 
 function fxoo() {}
 //---------------------------
@@ -271,32 +452,26 @@ function fxoo() {}
 // y is the last function  not defined
 
 //const xxx = new VoiceToCommand({
-    //commands: {
-        //sayhi,
+//commands: {
+//sayhi,
 
-        //runHard() {
-            //console.log('hi')
-        //},
-        //theCakesToday() {
-            //console.log('cake time')
-        //},
-        //register(key) {
-            //console.log(arguments)
-            //console.log('registering fu')
-            //xxx.indexTree.registerFunction(hix)
-        //},
-        //if: logicHandler('if'),
-        //for: logicHandler('for'),
-        //forKV: logicHandler('forkv'),
-        //while: logicHandler('while'),
-    //},
-    //defaultCallback(s) {
-        //console.log({default: s})
-    //},
+//runHard() {
+//},
+//theCakesToday() {
+//},
+//register(key) {
+//xxx.indexTree.registerFunction(hix)
+//},
+//if: logicHandler('if'),
+//for: logicHandler('for'),
+//forKV: logicHandler('forkv'),
+//while: logicHandler('while'),
+//},
+//defaultCallback(s) {
+//},
 //})
 
 //xxx.callback('hix') //nth happens
-//xxx.on('loading', (x) => console.log('loading', x))
 //xxx.callback('hix') //nth hapepns
 //xxx.callback('register')  //register
 //xxx.callback('hix') //registered as bb
@@ -307,13 +482,12 @@ function fxoo() {}
 //xxx.callback('hix')
 //xxx.callback('hix')
 //xxx.override = {
-    //key: 'sam',
-    //commands: {
-        //foo(x) {
-            //console.log('foooooooooooo', x)
-            //return true
-        //},
-    //}
+//key: 'sam',
+//commands: {
+//foo(x) {
+//return true
+//},
+//}
 //}
 //xxx.callback('hix')
 //xxx.callback('hix')
@@ -326,23 +500,34 @@ function fxoo() {}
 //xxx.callback('foo')
 
 //function hix(xxx, y) {
-    //console.log('cccccccccc', xxx, y)
 //}
 
-
-//const xxx = new VoiceToCommand({
-    //commands: {
-        //sayhi,
-        //foo() {
-            //console.log('ccc')
-        //},
-    //},
-    //defaultCallback(c) {
-        //console.log(c, 'd')
-    //},
-//})
+//xxx.setArgParse(identity)
 //xxx.callback('foo boo goo boo') // runs the default
 //xxx.override = proseVoice
 //xxx.callback('foo boo goo boo') // runs the default
 //xxx.callback('foo boo goo boo') // runs the default
+
+function runtest() {
+    const v = new VoiceToCommand({
+        commands: {
+            sayhi,
+            foo() {},
+        },
+        argParse: identity,
+        defaultCallback(c) {
+            console.log(c, 'default clalback')
+        },
+    })
+    //v.indexTree.registerFunction(zoop)
+    //v.indexTree.registerFunction(boop)
+    //v.callback('zoop hi', true, 5)
+    //v.callback('zoop hi', true, 10)
+    s = `
+hi there how can i help u
+im looking for a wrench
+A wrench you say? Well that's wonderful. I have many delicious wrenches.
+`
+    linegetter(s).map((x, i) => v.callback(x, true, i))
+}
 

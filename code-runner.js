@@ -1,3 +1,5 @@
+
+
 const VueDisplayCallbacks = {
     consoleEnter() {
         console.log('entering the console')
@@ -10,19 +12,16 @@ const VueDisplayCallbacks = {
         this.html = this.editor.text
     },
     async iframeEnter(dataObject) {
-        //console.log(dataObject); throw "";
-        dataObject.lastElementName = app.lastElementName
         const htmlString = htmlBuilder(dataObject)
-        //const delay = this.config.delay
         this.frameKey += 1
         await this.$nextTick()
-        const htmlstamp = jspy('html', 'comment', timestamp()) + '\n'
-        this.computedHtml = htmlstamp +  htmlString
-        console.log(this.computedHtml)
-        //console.log('the html - inside the iframe')
+        this.computedHtml = htmlString
+        //console.log(htmlString)
     },
     iframeExit() {
-        this.$refs.iframe.$el.contentWindow.innerHTML = ''
+        // this was moved to the iframecomponent
+        // we will se if it works
+        //this.$refs.iframe.$el.contentWindow.innerHTML = ''
         //this.frameKey += 1
     },
     codemirrorEnter() {
@@ -60,7 +59,6 @@ function vuecmToIframe(vue, code) {
     const dataObject = { js, css}
 
     //const htmlString = htmlBuilder(dataObject)
-    //throw ''
     //const delay = vue.config.delay
     //vue.frameKey += 1
     //vue.$nextTick(() => {
@@ -73,15 +71,13 @@ function vuecmToIframe(vue, code) {
 
 function extraText(text, context, overrideName) {
     let extra = ''
-    console.log(context)
+    //console.log(context)
     if (context.context == 'vue') {
         //console.log(context.name)
         let appNumber = 100
         extra = `app${appNumber} = new Vue(${capitalize(overrideName || context.name)}).$mount('#app${appNumber}')`
-        //console.log(extra); throw ''
     } else if (context.context == 'function') {
         extra = stringcall(context.name, loremify({ parameters:context.parameters }))
-        //console.log({extra, name}); throw "";
     } else if (context.context == 'class') {
         extra = stringCallClass(context)
     }
@@ -109,22 +105,57 @@ function vuePreview(x) {
 }
 
 
-
+/* needs to respond */
 function vuecmCodeRunner() {
-    let cm = app.editor.cm
-    let lang = app.editor.lang
-    let vue = app
-    app.overrideName = 'app'
-    const activeBuffers = app.editor.buffers.getActiveBuffers()
 
-    let css = app.editor.buffers.getString('styles.css')
-    let js = app.editor.buffers.getString('index.js')
+    function iframe(data) {
+        return vue.displayManager.enterAndLeave('iframe', data)
+    }
+    function singletonIframe(obj) {
+        return VueDisplayCallbacks.iframeEnter.call(app, {
+            legos: false,
+            ...obj
+        }).then(wait).then((x) => VueDisplayCallbacks.codemirrorEnter.call(app))
+    }
+
+    let vue = app
+    let editor = app.editor
+    let {cm, lang, mode} = editor
+    let {html, js, css} = editor.buffers.toJSON()
+
+    if (css && !html && !js) {
+        editor.mode = 'css-to-html'
+        return iframe({css, html: htmlFromCss(css)})
+    }
+
+    if (mode == 'vanilla-html') {
+        return iframe({css, html})
+    }
+    if (mode == 'vanilla-js') {
+        return singletonIframe({js, html: htmlFromJs(js)})
+    }
+
+    if (mode == 'html-to-vue') {
+        if (js) {
+            if (lang == 'html') {
+                js = changeTemplate(js, html)
+                editor.buffers.patch('index.js', js)
+            }
+            return iframe({css, vuejs: js})
+        } else {
+            let vuejs = vuejsFromHtml(html)
+            editor.buffers.patch('index.js', vuejs)
+            return iframe({css, vuejs})
+        }
+    }
+
     let useConsole = /^console/gm.test(js)
 
-    if (app.editor.mode == 'js-html' || hasHtmlStuff(js))  {
+    if (mode == 'js-to-html' || hasHtmlStuff(js))  {
         //console.log(app.editor.mode)
-        let html = createHtmlFrom({js})
+        //html = createHtmlFrom({js})
         if (useConsole) {
+            /* the lego console ... */
             js = replace(/^[ \t]*console.log.+/gm, (x) => {
                 let extra = x.replace('console.log', 'legoConsoleEl.push')
                 return x + '\n' + extra
@@ -134,13 +165,13 @@ function vuecmCodeRunner() {
         vue.displayManager.enterAndLeave('iframe', data)
         return 
     }
-    else if (useConsole) {
-        console.log('hiiii')
+
+    if (useConsole) {
         return vuecmToConsole(vue, js)
     }
 
     if (activeBuffers.length == 3) {
-        console.log('returning iframe html')
+        speak('full metal')
         return vuecmToIframeHtml(vue)
     }
 
@@ -154,8 +185,7 @@ function vuecmCodeRunner() {
     }
     let text = cmText(cm)
     let context = cmContext(cm)
-    console.log(context)
-    let extra = extraText(text, context, app.overrideName)
+    let extra = extraText(text, context)
     let code = text + '\n\n' + extra
 
     if (context.context == 'vue') {
@@ -167,5 +197,5 @@ function vuecmCodeRunner() {
     }
 }
 
-
 /* maybe the feeling that i dont want to interact ... */
+/* steve kerr wants really badly to win ...  */

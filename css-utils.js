@@ -1,3 +1,50 @@
+
+const colorPairs = [
+    [
+        '#69d2e7',
+        '#f38630',
+    ],
+    [
+        '#fe4365',
+        '#83af9b',
+    ],
+    [
+        '#ff6b6b',
+        '#4ecdc4',
+    ],
+    [
+        '#ece5ce',
+        '#c5e0dc',
+    ],
+    [
+        '#031634',
+        '#e8ddcb',
+    ],
+    [
+        '#45ada8',
+        '#9de0ad',
+    ],
+    [
+        '#c6e5d9',
+        '#e94e77',
+    ],
+    [
+        '#ff9e9d',
+        '#ff3d7f',
+    ],
+    [
+        '#00dffc',
+        '#008c9e',
+    ],
+    [
+        '#f0b49e',
+        '#f7e4be',
+    ],
+    [
+        '#ff847c',
+        '#f6f7bd',
+    ],
+]
 function cssDecompose(s) {
     const regex = /^(.*?) {\n([^]+?)\n}/m
     const fn = compose(runner, trimmed, dedent)
@@ -23,9 +70,12 @@ function cssDecompose(s) {
 }
 function aggregateCSS(s, mode = String) {
     const regex = /^(.*?)\s*{([^]+?)}/gm
+    const ignore = ['foo', 'boo', 'mockup']
     const fn = compose(runner, trimmed, dedent)
     storage = new Storage()
     findall(regex, s).forEach(([a, b]) => {
+        a = a.trim()
+        if (test(/foo|boo|mockup/, a)) return 
         const pairs = fn(b)
         for (let [c, d] of pairs) {
             if (!c || !d) continue
@@ -36,7 +86,7 @@ function aggregateCSS(s, mode = String) {
     function runner(s) {
         const regex = test(/;/, s) ? /;\s*$/m : /\s*$/m
         const items = split(s, regex)
-        const value = items.filter(exists).map((x) => split(x, / *: */))
+        const value = items.filter(exists).map((x) => split(x, / *: *(?!['"])/))
         return value
     }
 
@@ -44,10 +94,19 @@ function aggregateCSS(s, mode = String) {
         return storage
     }
 
-    console.log(storage.entries)
+    //console.log(storage.entries)
+    //console.log(); throw ''
+    // will not be present
     if (mode == String) {
+        let positionKeys = ['relative', 'fixed', 'absolute']
         return cssCleanupFinalString(
             reduceToString(storage.entries, (k, v) => {
+                if (!intersects(v, positionKeys)) {
+                    pop(v, 'top')
+                    pop(v, 'bottom')
+                    pop(v, 'left')
+                    pop(v, 'right')
+                }
                 return toCssFinalProduct(k, v)
             })
         )
@@ -97,16 +156,12 @@ function cssBox() {
         ['background', randomColor()],
     ]
 }
-function randomColor() {
-    return randomPick(roygbiv.slice(0, 5))
-}
 const cssFunctions = {
     'box': cssBox,
     'bgp': backgroundPositionParser,
     'bgg': backgroundGradient,
     'img': cssImgParser,
 }
-
             //return [
                 //['position', 'absolute'],
                 //['top', posX + '%'],
@@ -456,7 +511,6 @@ function backgroundGradient(s) {
         let offset = b ? b + '%' : ''
         return color + ' ' + offset
     })
-    //console.log(values); throw ''
     const arg = extra + values.join(', ')
     const output = `linear-gradient(${arg})`
     return [['background', output]]
@@ -529,7 +583,7 @@ function cssCleanupFinalString(s) {
 }
 
 function cssHasStringError(s) {
-    return s && /null|undefined|: (?:[=]|[a-zA-Z]{1,2};)/.test(s)
+    return s && /unset|none|null|undefined|: (?:[=]|[a-zA-Z]{1,2};)/.test(s)
 }
 
 function cssBoxShadow(b) {
@@ -542,7 +596,7 @@ function cssBoxShadow(b) {
         '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)',
     ]
 
-    return '0px 4px 10px rgba(0, 0, 0, 0.25)'
+    return shadows[Number(b)]
 }
 
 function cssBorder(s, key) {
@@ -919,6 +973,9 @@ const cabmap = {
       ["-webkit-background-clip", "text"],
       ["-webkit-text-fill-color", "transparent"],
     ],
+    '100vh': [['height', '100vh']],
+    '100vw': [['width', '100vw']],
+    'wrap': [['flex-wrap', 'wrap']],
     jis: [['justify-items', 'start']],
     jie: [['justify-items', 'end']],
     jic: [['justify-items', 'center']],
@@ -1353,14 +1410,46 @@ function cssFontFamily(s) {
     return [['font-family', font]]
 }
 
-/* my social skills suck */
+function cssGtc(s) {
+    let gtc, a, b, c, d, e
+    if (isNumber(s)) {
+        switch (s.length) {
+            case 2:
+                a = Number(s.slice(0, 2))
+                b = 100 - a
+                break
+            case 4:
+                a = Number(s.slice(0, 2))
+                b = Number(s.slice(2, 4))
+                if (a + b != 100) c = 100 - (a + b)
+                break
+        }
+        let numbers = [a,b,c,d,e].map(divide10).filter(exists)
+        gtc = numbers.map(addf('fr')).join(' ')
+    }
 
+    return [
+        ['display', 'grid'],
+        ['grid-template-columns', gtc],
+    ]
+}
+function cssMockup(s) {
+    let a = s[0] || 2
+    let b = s[1] || 1
+    return [
+        ['width', a + '00px'],
+        ['height', b + '00px'],
+        ['background', randomColor()],
+    ]
+}
 const cssattrmap = {
     /* marked */ con: 'content',
     '-?\\d{1,2}': '',
     bs: cssKeyWrap('animation', cssAnimation),
     cm: cssColorMatch,
     ff: cssFontFamily,
+    mu: cssMockup,
+    gtc: cssGtc,
     grid: cssGrid,
     //bgp: cssBackgroundPosition,
     ul: cssUnderline,
@@ -1391,7 +1480,7 @@ const cssattrmap = {
     cgap: 'column-gap',
     rgap: 'row-gap',
     gap: 'grid-gap',
-    bs: 'box-shadow',
+    //bs: 'box-shadow',
     ai: 'align-items',
     jc: 'justify-content',
     //gc: 'grid-column',
@@ -1672,7 +1761,6 @@ function cssIncrement(key, value, direction, dynamicKFactor) {
     )
     //console.log([value, direction * increment, min, max])
     //console.log(nextValue)
-    //console.log(nextValue); throw "";
     return nextValue == 0 ? 0 : nextValue + (originalUnit || unit || '')
 }
 
@@ -1929,10 +2017,6 @@ const cssSpellcheck = spellcheckFactory(cssReplacementDictionary)
 const cssParserGlobalREGEX = aggregateRegexFromHashmap(cssattrmap)
 //console.log(cssParserGlobalREGEX)
 
-function splitHtmlCss(s) {
-    console.log('humz'); throw 'humz'
-}
-
 function hasDashedLine(s) {
     return test(/^--+$/m, s)
 }
@@ -2084,3 +2168,5 @@ function gridify(n, key = 'rows') {
 //console.log(cssEvaluator('o5'))
 //console.log(cssEvaluator('fcb5'))
 //console.log(cssEvaluator('bot10 top10 left10 right10 l20 r20p t30em'))
+        //console.log(cssParser('vim-modes', 'p5 aic flex jcs a b0 r0 cmb7 fs18 h60px w240px fw600 sans z1000'))
+        //console.log(cssEvaluator('mu52'))

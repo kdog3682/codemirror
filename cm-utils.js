@@ -3,7 +3,7 @@
 //const {Extension} = CM['@codemirror/state']
 /* highlighting */
 
-const {redo, undo} = CM['@codemirror/history']
+const CodeMirrorHistory = CM['@codemirror/history']
 const CodeMirrorCommands = CM['@codemirror/commands']
 //console.log(CodeMirrorCommands)
 const {
@@ -581,41 +581,6 @@ function cmFunctionFromLine(cm, lang = 'js') {
 
 // shiftEnter
 
-function cmVeryMagicHandler(cm, line) {
-
-    if (/[^\s\w]/.test(line.text)) return 
-    let [spaces, text] = getIndentAndLine(line.text)
-    const [tag, rest] = splitonce(text)
-
-    let template = firstWords[tag]
-    if (!template) {
-        return 
-    }
-
-    let n = getLongestDollar(template)
-    let args =
-        n == 2
-            ? splitOnceReverse(rest, ' ')
-            : rest
-            ? [rest]
-            : []
-
-    if (args.length < n) {
-        let lastBinding = cmGetLastBinding(cm, line)
-        args.push(lastBinding)
-    }
-
-    template = indent(template, spaces)
-    let chunk = spicyTemplater(template, args)
-    const [insert, cursor] = getCursorFromText(chunk)
-    return cmDispatchText(
-        cm,
-        line.from,
-        line.to,
-        insert,
-        cursor + line.from, 
-    )
-}
 function cmIndentHelper(text, spaces) {
     if (isString(spaces)) {
         return text.replace(/\n/g, '\n' + spaces)
@@ -915,17 +880,21 @@ function nodeObjectSprawl(node, o) {
 }
 
 function cmReplace(cm, area, a, b, flags = 'g') {
-    let { from, to, text } = area(cm)
-    //console.log({from, to, text})
+    let { from, to, text } = 
+        isFunction(area) ? area(cm) : area
+
     if (!text) text = cm.state.sliceDoc(from, to)
     if (!text) {
         console.log('nnoremap text @cmreplcae early return')
         return 
     }
+
     const anchor = cmPos(cm)
     const insert = isFunction(a)
         ? a(text)
-        : replace(a, b, text, flags || 'g')
+        : b != null
+        ? replace(a, b, text, flags || 'g')
+        : a
 
     cm.dispatch({
         changes: { from, to, insert },
@@ -1603,8 +1572,7 @@ function cmWordSpiral(cm, pos, start, key) {
     let A = 0
     let B = 0
     let index
-    //console.log([start, key, pos])
-    //console.log(JSON.stringify(cm.visibleRanges, null, 2))
+
     let max = cmLength(cm)
     while (count++ < 16) {
         if (count % 2 == 1 && A + start > 0) {
@@ -1624,7 +1592,7 @@ function cmWordSpiral(cm, pos, start, key) {
             line = cm.state.doc.line(index)
             }
             catch(e) {
-                console.log('got an error')
+                console.log('got an error', e.toString())
                 return 
             }
         let text = line.text
@@ -1677,13 +1645,15 @@ function cmTree(cm) {
     return syntaxTree(cm.state)
 }
 function viewTree(cm) {
+    if (!cm) cm = e.cm
+        //console.log('vvv')
     console.log(cmText(cm))
     let cursor = cmTree(cm).cursor()
     while (cursor.next()) {
         console.log(cmLook(cm, cursor))
     }
-    console.log('done')
-    throw ''
+    //console.log('done viewing the tree')
+    //throw ''
 }
 const cmSpicyRef = {
     last(cm, f) {
@@ -1857,14 +1827,44 @@ function cmCreateKeyFrames(cm) {
     return cmDispatchChunk(cm, payload)
 
 }
+function cmCreateSelector(cm) {
+    const line = cmLine(cm)
+    const args = {'c': '$c'}
+
+    let template = '${fixSelector($line)} {\n\t$c\n}\n'
+    if (template.includes('$line')) {
+        args.line = line.text
+    }
+    template = spicyTemplater(template, args)
+    cmDollar(cm, line, template)
+    return 1
+}
+function cmTemplaterFactory(obj) {
+    return reduceObject(obj, (k, template) => {
+        return function lambda(cm, f) {
+            const line = cmLine(cm, f)
+            const args = {'c': '$c'}
+            if (template.includes('$line')) {
+                args.line = line.text
+            }
+            template = spicyTemplater(template, args)
+            cmDollar(cm, line, template)
+            return 1
+
+        }
+    })
+}
 
 function cmCreateFunction(cm, offset) {
     const line = cmLine(cm)
     let [spaces, text] = getIndentAndLine(line.text)
-    if (offset) text = text.slice(0, -1 * offset)
+    //console.log([spaces, text, offset])
+    //if (offset) text = text.slice(0, -1 * offset)
 
     const words = split(text)
+    //console.log([words])
     const type = spaces == 0 ? 'function' : cmWrapperContext(cm)
+    //console.log(type)
     let [name, params] = splitonce(words)
     let body = ''
     let payload
@@ -2087,6 +2087,7 @@ function selectionLines(cm) {
 
 
 function cmCreateDitto(cm) {
+    console.log('ditto')
     const upline = cmUpline(cm).text
     if (!exists(upline)) {
         return 
@@ -2154,17 +2155,33 @@ function cmDittoBlock(cm, cursor, s) {
 /* stable &&sort */
 
 
+
+function cmLess(cm) {
+    let area = cmHorizontalSprawl(cm, /[^.-\w]/)
+    cmReplace(cm, area, smartLess)
+}
+
+function cmMore(cm) {
+    /* todo */
+    let area = cmHorizontalSprawl(cm, /[^.-\w]/)
+    cmReplace(cm, area, smartMore)
+}
+
+function cmOpposite(cm) {
+    let area = cmHorizontalSprawl(cm, /[^.-\w]/)
+    cmReplace(cm, area, opposite)
+}
+
 function cmSubstitute(cm, s, flags = '') {
-    let word = cmWordUnderCursor(cm)
+
+    let area = cmHorizontalSprawl(cm, /[^.-\w]/)
     if (flags.includes('b')) word = boundary(word)
     if (flags.includes('g')) {
         flags = 'g'
-    }
-    else {
+    } else {
          flags = ''
     }
-    word = rescape(word)
-    cmReplaceLine(cm, word, s, flags)
+    cmReplace(cm, area, s)
 }
 
 function cmSpicyTemplater(cm, f, template, originalLine) {
@@ -2178,4 +2195,53 @@ function somethingSelected(cursor) {
     return !cursor.empty
     return cursor.from != cursor.to
 }
+
+function cmDeleteToLineStart(cm) {
+    cmReplace(cm, cmLine, (x) => getTabs(x))
+}
+function cmSpanify(cm) {
+    cmReplace(cm, cmHorizontalSprawl, spanify)
+}
+function horoIncrementer(pos, dir, text, regex) {
+    if (!pos) return pos
+    while (true) {
+      let ch = text.charAt(pos)
+      if (!ch || regex.test(ch)) {
+          if (ch && dir == -1) pos -= dir
+          break
+      }
+      pos += dir
+    }
+    //console.log([pos, text.charAt(pos)])
+    return pos
+}
+function cmHorizontalSprawl(cm, regex = /[^.,\w]/) {
+    let {from, to} = cmCursor(cm)
+    //console.log({from, to})
+    let line = cmLine(cm)
+    let text = line.text
+    to = horoIncrementer(to, 1, text, regex)
+    from = horoIncrementer(from, -1, text, regex)
+    //console.log({from, to})
+    //console.log(JSON.stringify(cursor, null, 2))
+    return {from, to, text: cm.state.sliceDoc(from, to)}
+}
+function cmWordUnderCursor(cm) {
+    let value = cmHorizontalSprawl(cm, /[^.-\w]/)
+
+}
+
+function cmClipboard(cm) {
+        setClipboard(cmText(cm))
+}
+
+
+function ins(s) {
+    cmInsert(e.cm, s)
+}
+
+function cmSyntaxTag(cm) {
+    return cmNode(cm).name
+}
+
 
